@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tirage des binômes de la fabrique pédagogique de l'AM</title>
+    <link rel="icon" type="image/png" href="logofp.png">
+    <style>
+        :root {
+            --bg-color: #111936;
+            --text-color: #f8fbff;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --border-color: rgba(255, 255, 255, 0.2);
+            --accent: #B98E61;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background 0.3s;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .title-container img {
+            height: 50px;
+            width: auto;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.2s;
+        }
+
+        .btn-icon:hover { transform: rotate(45deg); }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 30px;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .wheel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+
+        canvas.wheel-canvas {
+            border-radius: 50%;
+            border: 4px solid var(--border-color);
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            transition: transform cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        .pointer {
+            width: 0; 
+            height: 0; 
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid white;
+            margin-bottom: -15px;
+            z-index: 10;
+        }
+
+        .center-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        button.action-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        button.action-btn:hover { opacity: 0.9; transform: scale(1.03); }
+        button.action-btn:disabled { background: #555; cursor: not-allowed; transform: none; }
+
+        .results {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 320px;
+            text-align: center;
+            max-height: 80vh; /* Permet d'afficher largement 10+ binômes sans scroll */
+            overflow-y: auto;
+        }
+
+        .pair-item {
+            margin: 4px 0;
+            padding: 5px 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            text-align: left;
+            font-size: 0.92rem;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .pair-label {
+            font-weight: bold;
+            color: #ffd166;
+            outline: none;
+            border-bottom: 1px dashed rgba(255,255,255,0.4);
+            cursor: text;
+        }
+
+        .pair-label:focus {
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+
+        /* --- ÉCRAN RAPIDE DE VITESSE EN BAS À DROITE --- */
+        .quick-speed-box {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--border-color);
+            padding: 10px 18px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            z-index: 20;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .quick-speed-box input[type="range"] {
+            width: 100px;
+            cursor: pointer;
+        }
+
+        /* --- ANNONCE POPUP DU GAGNANT --- */
+        .announcement-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 90;
+        }
+
+        .announcement-card {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 2px solid var(--accent);
+            padding: 30px 50px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .announcement-card h4 {
+            margin: 0 0 10px 0;
+            color: #ffd166;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .announcement-card .names {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        /* --- CANVAS CONFETTI --- */
+        #confetti-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* --- MODAL PARAMÈTRES --- */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 750px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .form-group label { margin-bottom: 5px; font-weight: bold; color: #cbd5e1; }
+        .form-group input, .form-group textarea, .form-group select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: white;
+            font-family: inherit;
+        }
+
+        .flex-row { display: flex; gap: 15px; }
+        .flex-row > * { flex: 1; }
+
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #475569;
+        }
+
+        .history-controls button {
+            background: #475569; padding: 8px 15px; border-radius: 5px; border: none; color: white; cursor:pointer;
+        }
+
+        .color-pickers-grid {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .color-picker-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .color-picker-item input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <header>
+        <div class="title-container">
+            <img src="logofp.png" alt="Logo FP">
+            <h1>Tirage des binômes de la fabrique pédagogique de l'AM</h1>
+        </div>
+        <button class="btn-icon" id="btn-settings" title="Paramètres">⚙️</button>
+    </header>
+
+    <div class="main-content">
+        <div class="wheel-container">
+            <h2 id="title-w1">Pioche 1</h2>
+            <div class="pointer"></div>
+            <canvas id="wheel1" class="wheel-canvas" width="350" height="350"></canvas>
+        </div>
+
+        <div class="center-controls">
+            <button class="action-btn" id="btn-spin">LANCER LE BINÔME</button>
+            <button class="action-btn" id="btn-reset" style="background:#dc2626; display:none;">RÉINITIALISER</button>
+            <button class="action-btn" id="btn-export-table" style="background:#2563eb; display:none; font-size: 0.95rem; padding: 10px 20px;">Exporter les binômes dans un tableau...</button>
+            
+            <div class="results">
+                <h3 id="title-group" style="margin-top:0;">Binômes formés</h3>
+                <div id="pairs-list"></div>
+            </div>
+        </div>
+
+        <div class="wheel-container">
+            <h2 id="title-w2">Pioche 2</h2>
+            <div class="pointer"></div>
+            <canvas id="wheel2" class="wheel-canvas" width="350" height="350"></canvas>
+        </div>
+    </div>
+
+    <!-- Sélecteur de vitesse rapide -->
+    <div class="quick-speed-box">
+        <span>⚡ Vitesse :</span>
+        <input type="range" id="quick-speed-slider" min="1" max="10" step="0.5">
+        <span id="quick-speed-val">4s</span>
+    </div>
+
+    <!-- Overlay Annonce tirage -->
+    <div class="announcement-overlay" id="announcement-overlay">
+        <div class="announcement-card">
+            <h4 id="announce-label">Nouveau binôme formé !</h4>
+            <div class="names" id="announce-names">... & ...</div>
+        </div>
+    </div>
+
+    <!-- Modal Paramètres -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <h2 style="margin-top:0; border-bottom: 1px solid #475569; padding-bottom: 10px;">Paramètres</h2>
+            
+            <div class="flex-row">
+                <div class="form-group">
+                    <label>Noms Roue 1 (un par ligne)</label>
+                    <textarea id="set-names1" rows="5"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Noms Roue 2 (un par ligne)</label>
+                    <textarea id="set-names2" rows="5"></textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Noms personnalisés des binômes (un par ligne - optionnel)</label>
+                <textarea id="set-custom-pair-names" rows="3" placeholder="Ex: Équipe Alpha&#10;Équipe Bêta&#10;Table 1"></textarea>
+            </div>
+
+            <div class="flex-row">
+                <div class="form-group">
+                    <label>Nom de la Roue 1</label>
+                    <input type="text" id="set-title1">
+                </div>
+                <div class="form-group">
+                    <label>Nom de la Roue 2</label>
+                    <input type="text" id="set-title2">
+                </div>
+                <div class="form-group">
+                    <label>Titre de la zone de résultats</label>
+                    <input type="text" id="set-group-title">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Palette de couleur des roues</label>
+                <select id="set-palette">
+                    <option value="custom">Fabrique Pédagogique (Originale)</option>
+                    <option value="vibrant">Vibrante</option>
+                    <option value="pastel">Pastel</option>
+                    <option value="neon">Néon</option>
+                    <option value="ocean">Océan</option>
+                    <option value="forest">Forêt</option>
+                    <option value="warm">Épices / Chaud</option>
+                </select>
+                <label style="margin-top: 10px; font-size: 0.9em; color: #94a3b8;">Ajuster chaque couleur individuellement :</label>
+                <div class="color-pickers-grid" id="color-pickers-container"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Fond d'écran</label>
+                <input type="color" id="set-bg-color">
+                <label style="margin-top:10px; font-size:0.9em;">Ou importer une image :</label>
+                <input type="file" id="set-bg-image" accept="image/*">
+            </div>
+
+            <div class="modal-actions">
+                <div class="history-controls">
+                    <button id="btn-undo" title="Annuler">↩️ Annuler</button>
+                    <button id="btn-redo" title="Rétablir">↪️ Rétablir</button>
+                </div>
+                <div class="history-controls">
+                    <button id="btn-export" title="Télécharger le cache">📥 Exporter (.json)</button>
+                    <input type="file" id="btn-import" accept=".json" style="display:none;">
+                    <button onclick="document.getElementById('btn-import').click()" title="Ouvrir un cache">📤 Importer</button>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="justify-content: flex-end; gap: 15px;">
+                <button class="action-btn" style="background:#475569; padding: 10px 20px;" id="btn-close-settings">Annuler</button>
+                <button class="action-btn" style="padding: 10px 20px;" id="btn-save-settings">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const presetPalettes = {
+            custom: ['#7A4E47', '#CDB0A1', '#B98E61', '#C7B89C', '#DDDDCF', '#DBCEC3'],
+            vibrant: ['#ff595e', '#ffca3a', '#8ac926', '#1982c4', '#6a4c93', '#f15bb5'],
+            pastel: ['#ffb5a7', '#fcd5ce', '#f8edeb', '#f9dcc4', '#fec89a', '#e2e2df'],
+            neon: ['#00f5d4', '#7b2cbf', '#f72585', '#4cc9f0', '#7209b7', '#480ca8'],
+            ocean: ['#03045e', '#0077b6', '#00b4d8', '#90e0ef', '#caf0f8', '#0096c7'],
+            forest: ['#2d6a4f', '#40916c', '#52b788', '#74c69d', '#95d5b2', '#d8f3dc'],
+            warm: ['#d00000', '#dc2f02', '#e85d04', '#f48c06', '#faa307', '#ffba08']
+        };
+
+        let config = {
+            names1: ["mounaim", "patricia", "marine", "kevin", "juliette", "vincent B"],
+            names2: ["priscille", "clément", "vincent M", "domitille", "lucie", "Murielle"],
+            customPairNames: [],
+            title1: "Pioche 1",
+            title2: "Pioche 2",
+            groupTitle: "Binômes formés",
+            speed: 4,
+            paletteKey: 'custom',
+            activeColors: ['#7A4E47', '#CDB0A1', '#B98E61', '#C7B89C', '#DDDDCF', '#DBCEC3'],
+            bgColor: '#111936',
+            bgImage: ''
+        };
+
+        let activeNames1 = [];
+        let activeNames2 = [];
+        let pairs = [];
+        let isSpinning = false;
+
+        let history = [];
+        let historyIndex = -1;
+
+        function init() {
+            loadConfig();
+            saveStateToHistory();
+            resetGame();
+            setupEventListeners();
+        }
+
+        function drawWheel(canvasId, names) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext("2d");
+            const w = canvas.width;
+            const h = canvas.height;
+            const radius = w / 2;
+            const colors = config.activeColors;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            if(names.length === 0) {
+                ctx.beginPath();
+                ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = "#333";
+                ctx.fill();
+                ctx.fillStyle = "#fff";
+                ctx.textAlign = "center";
+                ctx.font = "20px Arial";
+                ctx.fillText("Vide", radius, radius);
+                return;
+            }
+
+            const arc = (2 * Math.PI) / names.length;
+
+            for (let i = 0; i < names.length; i++) {
+                ctx.beginPath();
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.moveTo(radius, radius);
+                ctx.arc(radius, radius, radius, i * arc, (i + 1) * arc);
+                ctx.fill();
+                ctx.save();
+
+                ctx.translate(radius, radius);
+                ctx.rotate(i * arc + arc / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#ffffff";
+                ctx.shadowColor = "rgba(0,0,0,0.6)";
+                ctx.shadowBlur = 4;
+                ctx.font = "bold 18px 'Segoe UI'";
+                ctx.fillText(names[i], radius - 15, 6);
+                ctx.restore();
+            }
+        }
+
+        function spin() {
+            if (isSpinning || activeNames1.length === 0 || activeNames2.length === 0) return;
+            isSpinning = true;
+            document.getElementById('btn-spin').disabled = true;
+
+            const wheel1 = document.getElementById('wheel1');
+            const wheel2 = document.getElementById('wheel2');
+
+            const rand1 = Math.floor(Math.random() * activeNames1.length);
+            const rand2 = Math.floor(Math.random() * activeNames2.length);
+
+            const currentSpeed = config.speed;
+            const baseRot = 360 * currentSpeed;
+            const arc1 = 360 / activeNames1.length;
+            const arc2 = 360 / activeNames2.length;
+            
+            const stopAngle1 = baseRot + (360 - (rand1 * arc1) - (arc1 / 2) - 90);
+            const stopAngle2 = baseRot + (360 - (rand2 * arc2) - (arc2 / 2) - 90);
+
+            wheel1.style.transition = `transform ${currentSpeed}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
+            wheel2.style.transition = `transform ${currentSpeed}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
+            
+            const currentRot1 = parseFloat(wheel1.dataset.rotation || 0);
+            const currentRot2 = parseFloat(wheel2.dataset.rotation || 0);
+            
+            const newRot1 = currentRot1 + stopAngle1;
+            const newRot2 = currentRot2 + stopAngle2;
+
+            wheel1.style.transform = `rotate(${newRot1}deg)`;
+            wheel2.style.transform = `rotate(${newRot2}deg)`;
+            
+            wheel1.dataset.rotation = newRot1;
+            wheel2.dataset.rotation = newRot2;
+
+            const visualDelay = 1500;
+
+            setTimeout(() => {
+                const name1 = activeNames1[rand1];
+                const name2 = activeNames2[rand2];
+                
+                const pairIndex = pairs.length;
+                let pairLabel = `Binôme ${pairIndex + 1}`;
+                if (config.customPairNames && config.customPairNames[pairIndex]) {
+                    pairLabel = config.customPairNames[pairIndex];
+                }
+
+                showAnnouncement(pairLabel, `${name1} & ${name2}`, () => {
+                    pairs.push({ label: pairLabel, names: `${name1} & ${name2}` });
+                    
+                    activeNames1.splice(rand1, 1);
+                    activeNames2.splice(rand2, 1);
+                    
+                    updateUI();
+                    
+                    isSpinning = false;
+                    
+                    if (activeNames1.length === 0 || activeNames2.length === 0) {
+                        document.getElementById('btn-spin').style.display = 'none';
+                        document.getElementById('btn-reset').style.display = 'block';
+                        document.getElementById('btn-export-table').style.display = 'block';
+                        triggerConfetti();
+                    } else {
+                        document.getElementById('btn-spin').disabled = false;
+                    }
+                });
+            }, (currentSpeed * 1000) + visualDelay);
+        }
+
+        function showAnnouncement(label, pairNames, callback) {
+            const overlay = document.getElementById('announcement-overlay');
+            document.getElementById('announce-label').textContent = label;
+            document.getElementById('announce-names').textContent = pairNames;
+            
+            overlay.style.display = 'flex';
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                callback();
+            }, 2200);
+        }
+
+        function confirmReset() {
+            if (confirm("Voulez-vous vraiment réinitialiser le tirage et recommencer ?")) {
+                resetGame();
+            }
+        }
+
+        function resetGame() {
+            activeNames1 = [...config.names1];
+            activeNames2 = [...config.names2];
+            pairs = [];
+            
+            const wheel1 = document.getElementById('wheel1');
+            const wheel2 = document.getElementById('wheel2');
+            
+            wheel1.style.transition = 'none';
+            wheel2.style.transition = 'none';
+            wheel1.style.transform = 'rotate(0deg)';
+            wheel2.style.transform = 'rotate(0deg)';
+            wheel1.dataset.rotation = 0;
+            wheel2.dataset.rotation = 0;
+
+            document.getElementById('btn-spin').style.display = 'block';
+            document.getElementById('btn-spin').disabled = false;
+            document.getElementById('btn-reset').style.display = 'none';
+            document.getElementById('btn-export-table').style.display = 'none';
+
+            applyConfigToApp();
+            updateUI();
+        }
+
+        function exportPairsTable() {
+            if (pairs.length === 0) return;
+
+            let csvContent = "\ufeff";
+            csvContent += "Tirage des binômes de la fabrique pédagogique de l'AM;;\n;\n";
+            csvContent += "Binôme;Nom 1;Nom 2\n";
+
+            pairs.forEach(p => {
+                const parts = p.names.split(" & ");
+                const nom1 = parts[0] || "";
+                const nom2 = parts[1] || "";
+                
+                const labelClean = p.label.replace(/"/g, '""');
+                const nom1Clean = nom1.replace(/"/g, '""');
+                const nom2Clean = nom2.replace(/"/g, '""');
+
+                csvContent += `"${labelClean}";"${nom1Clean}";"${nom2Clean}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute('href', url);
+            downloadAnchor.setAttribute('download', 'binomes_retenus.csv');
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function updateUI() {
+            drawWheel('wheel1', activeNames1);
+            drawWheel('wheel2', activeNames2);
+            
+            const list = document.getElementById('pairs-list');
+            list.innerHTML = pairs.map((p, i) => `
+                <div class="pair-item">
+                    <span class="pair-label" contenteditable="true" onblur="pairs[${i}].label = this.innerText">${p.label}</span> : ${p.names}
+                </div>
+            `).join('');
+
+            document.getElementById('quick-speed-slider').value = config.speed;
+            document.getElementById('quick-speed-val').textContent = config.speed + "s";
+        }
+
+        function loadConfig() {
+            const saved = localStorage.getItem('binomeConfig');
+            if (saved) {
+                config = JSON.parse(saved);
+                if (!config.activeColors) {
+                    config.activeColors = presetPalettes[config.paletteKey || 'custom'];
+                }
+            }
+        }
+
+        function saveConfigLocal() {
+            localStorage.setItem('binomeConfig', JSON.stringify(config));
+        }
+
+        function applyConfigToApp() {
+            document.getElementById('title-w1').textContent = config.title1;
+            document.getElementById('title-w2').textContent = config.title2;
+            document.getElementById('title-group').textContent = config.groupTitle;
+            document.documentElement.style.setProperty('--accent', config.activeColors[0] || '#B98E61');
+            
+            if (config.bgImage) {
+                document.body.style.backgroundImage = `url(${config.bgImage})`;
+            } else {
+                document.body.style.backgroundImage = 'none';
+                document.body.style.backgroundColor = config.bgColor;
+            }
+        }
+
+        function saveStateToHistory() {
+            if (historyIndex < history.length - 1) {
+                history = history.slice(0, historyIndex + 1);
+            }
+            history.push(JSON.parse(JSON.stringify(config)));
+            historyIndex++;
+            updateHistoryButtons();
+        }
+
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                config = JSON.parse(JSON.stringify(history[historyIndex]));
+                populateSettingsModal();
+                updateHistoryButtons();
+            }
+        }
+
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                config = JSON.parse(JSON.stringify(history[historyIndex]));
+                populateSettingsModal();
+                updateHistoryButtons();
+            }
+        }
+
+        function updateHistoryButtons() {
+            document.getElementById('btn-undo').disabled = (historyIndex <= 0);
+            document.getElementById('btn-redo').disabled = (historyIndex >= history.length - 1);
+            
+            document.getElementById('btn-undo').style.opacity = (historyIndex <= 0) ? 0.5 : 1;
+            document.getElementById('btn-redo').style.opacity = (historyIndex >= history.length - 1) ? 0.5 : 1;
+        }
+
+        function openSettings() {
+            populateSettingsModal();
+            document.getElementById('settings-modal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        function populateSettingsModal() {
+            document.getElementById('set-names1').value = config.names1.join('\n');
+            document.getElementById('set-names2').value = config.names2.join('\n');
+            document.getElementById('set-custom-pair-names').value = (config.customPairNames || []).join('\n');
+            document.getElementById('set-title1').value = config.title1;
+            document.getElementById('set-title2').value = config.title2;
+            document.getElementById('set-group-title').value = config.groupTitle;
+            document.getElementById('set-palette').value = config.paletteKey || 'custom';
+            document.getElementById('set-bg-color').value = config.bgColor;
+            renderColorPickers();
+        }
+
+        function renderColorPickers() {
+            const container = document.getElementById('color-pickers-container');
+            container.innerHTML = '';
+            
+            config.activeColors.forEach((color, index) => {
+                const item = document.createElement('div');
+                item.className = 'color-picker-item';
+                item.innerHTML = `
+                    <input type="color" value="${color}" data-index="${index}">
+                    <span>C${index + 1}</span>
+                `;
+                container.appendChild(item);
+                
+                item.querySelector('input').addEventListener('input', (e) => {
+                    config.activeColors[index] = e.target.value;
+                });
+            });
+        }
+
+        function saveSettings() {
+            config.names1 = document.getElementById('set-names1').value.split('\n').map(s=>s.trim()).filter(s=>s);
+            config.names2 = document.getElementById('set-names2').value.split('\n').map(s=>s.trim()).filter(s=>s);
+            config.customPairNames = document.getElementById('set-custom-pair-names').value.split('\n').map(s=>s.trim()).filter(s=>s);
+            config.title1 = document.getElementById('set-title1').value;
+            config.title2 = document.getElementById('set-title2').value;
+            config.groupTitle = document.getElementById('set-group-title').value;
+            config.paletteKey = document.getElementById('set-palette').value;
+            config.bgColor = document.getElementById('set-bg-color').value;
+
+            saveStateToHistory();
+            saveConfigLocal();
+            closeSettings();
+            resetGame();
+        }
+
+        function exportConfig() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "config_binomes.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function importConfig(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    config = JSON.parse(e.target.result);
+                    saveStateToHistory();
+                    saveConfigLocal();
+                    populateSettingsModal();
+                    alert("Configuration chargée avec succès !");
+                } catch (err) {
+                    alert("Erreur lors de la lecture du fichier JSON.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#ffd166', '#00f5d4', '#f72585', '#7209b7', '#4cc9f0', '#ffffff'];
+
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 5 + 3,
+                    speedX: Math.random() * 4 - 2,
+                    rotation: Math.random() * 360,
+                    rotSpeed: Math.random() * 10 - 5
+                });
+            }
+
+            let animationFrame;
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+
+                particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    p.rotation += p.rotSpeed;
+
+                    if (p.y < canvas.height) alive = true;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+
+                if (alive) {
+                    animationFrame = requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+
+            animate();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('btn-spin').addEventListener('click', spin);
+            document.getElementById('btn-reset').addEventListener('click', confirmReset);
+            document.getElementById('btn-export-table').addEventListener('click', exportPairsTable);
+            document.getElementById('btn-settings').addEventListener('click', openSettings);
+            document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
+            document.getElementById('btn-save-settings').addEventListener('click', saveSettings);
+            
+            document.getElementById('quick-speed-slider').addEventListener('input', (e) => {
+                config.speed = parseFloat(e.target.value);
+                document.getElementById('quick-speed-val').textContent = config.speed + "s";
+                saveConfigLocal();
+            });
+
+            document.getElementById('set-palette').addEventListener('change', (e) => {
+                const key = e.target.value;
+                config.paletteKey = key;
+                config.activeColors = [...presetPalettes[key]];
+                renderColorPickers();
+            });
+
+            document.getElementById('btn-undo').addEventListener('click', undo);
+            document.getElementById('btn-redo').addEventListener('click', redo);
+            
+            document.getElementById('btn-export').addEventListener('click', exportConfig);
+            document.getElementById('btn-import').addEventListener('change', importConfig);
+
+            document.getElementById('set-bg-image').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        config.bgImage = evt.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
