@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tirage des binômes de la fabrique pédagogique de l'AM</title>
     <link rel="icon" type="image/png" href="logofp.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --bg-color: #111936;
@@ -13,7 +14,16 @@
             --border-color: rgba(255, 255, 255, 0.2);
             --accent: #B98E61;
         }
-
+ 
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-color: #f1f5f9;
+                --text-color: #0f172a;
+                --card-bg: rgba(255, 255, 255, 0.7);
+                --border-color: rgba(0, 0, 0, 0.1);
+            }
+        }
+ 
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
             color: var(--text-color);
@@ -27,348 +37,318 @@
             overflow: hidden;
             transition: background 0.3s;
         }
-
+ 
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 15px 30px;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
+            background: rgba(17, 25, 54, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
             z-index: 10;
+            transition: transform 0.3s, opacity 0.3s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
-
+ 
+        /* --- Mode Présentation --- */
+        body.presentation-mode header,
+        body.presentation-mode .quick-speed-box,
+        body.presentation-mode .presentation-hidden {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+ 
         .title-container {
             display: flex;
             align-items: center;
             gap: 15px;
         }
-
-        .title-container img {
-            height: 50px;
-            width: auto;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
+ 
+        .title-container img { height: 50px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        h1 { margin: 0; font-size: 1.5rem; color: #ffffff; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
+ 
         .btn-icon {
-            background: none;
-            border: none;
-            font-size: 1.8rem;
-            cursor: pointer;
-            color: white;
-            transition: transform 0.2s;
+            background: none; border: none; font-size: 1.6rem;
+            cursor: pointer; color: white; transition: transform 0.2s;
+            display: flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px; border-radius: 50%;
         }
-
-        .btn-icon:hover { transform: rotate(45deg); }
-
+        .btn-icon:hover { transform: scale(1.15) rotate(10deg); background: rgba(255,255,255,0.1); }
+ 
         .main-content {
-            display: flex;
-            flex: 1;
-            padding: 20px;
-            gap: 30px;
-            justify-content: center;
-            align-items: center;
+            display: flex; flex: 1; padding: 20px; gap: 30px;
+            justify-content: center; align-items: center; position: relative;
+        }
+ 
+        .wheel-container {
+            display: flex; flex-direction: column; align-items: center;
+            background: var(--card-bg); padding: 20px; border-radius: 15px;
+            border: 1px solid var(--border-color); backdrop-filter: blur(10px);
             position: relative;
         }
-
-        .wheel-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 15px;
-            border: 1px solid var(--border-color);
-            backdrop-filter: blur(10px);
-        }
-
+ 
         canvas.wheel-canvas {
             border-radius: 50%;
             border: 4px solid var(--border-color);
             box-shadow: 0 0 20px rgba(0,0,0,0.3);
-            transition: transform cubic-bezier(0.25, 0.1, 0.25, 1);
+            width: 350px; height: 350px; 
         }
-
+ 
         .pointer {
-            width: 0; 
-            height: 0; 
+            width: 0; height: 0; 
             border-left: 15px solid transparent;
             border-right: 15px solid transparent;
-            border-top: 25px solid white;
-            margin-bottom: -15px;
-            z-index: 10;
+            border-top: 25px solid #ef4444; 
+            margin-bottom: -15px; z-index: 10;
+            filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.5));
+            transform-origin: top center;
         }
-
+ 
+        @keyframes pointer-bounce {
+            0% { transform: translateY(0) rotate(0); }
+            50% { transform: translateY(-6px) rotate(8deg); }
+            100% { transform: translateY(0) rotate(0); }
+        }
+        .pointer.bounce { animation: pointer-bounce 0.1s cubic-bezier(0.25, 1, 0.5, 1); }
+ 
         .center-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            align-items: center;
+            display: flex; flex-direction: column; gap: 12px; align-items: center;
         }
-
+ 
         button.action-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            background: var(--accent); color: white; border: none;
+            padding: 15px 30px; font-size: 1.2rem; border-radius: 30px;
+            cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             transition: opacity 0.2s, transform 0.1s;
         }
         button.action-btn:hover { opacity: 0.9; transform: scale(1.03); }
         button.action-btn:disabled { background: #555; cursor: not-allowed; transform: none; }
-
+        
+        .secondary-btn {
+            background: rgba(255,255,255,0.1); color: var(--text-color);
+            border: 1px solid var(--border-color); padding: 8px 15px;
+            border-radius: 20px; cursor: pointer; font-size: 0.9rem;
+            transition: background 0.2s; display: flex; align-items: center; gap: 5px;
+        }
+        .secondary-btn:hover { background: rgba(255,255,255,0.2); }
+ 
         .results {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 15px;
-            border-radius: 10px;
-            min-width: 320px;
-            text-align: center;
-            max-height: 80vh; /* Permet d'afficher largement 10+ binômes sans scroll */
-            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.6); padding: 15px; border-radius: 10px;
+            min-width: 320px; text-align: center; max-height: 50vh; overflow-y: auto; color: white;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
-
+ 
         .pair-item {
-            margin: 4px 0;
-            padding: 5px 8px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 6px;
-            text-align: left;
-            font-size: 0.92rem;
-            animation: fadeIn 0.4s ease-out;
+            margin: 4px 0; padding: 5px 8px; background: rgba(255, 255, 255, 0.08);
+            border-radius: 6px; text-align: left; font-size: 0.92rem;
+            animation: fadeIn 0.4s ease-out; transition: opacity 0.3s;
         }
-
+ 
         .pair-label {
-            font-weight: bold;
-            color: #ffd166;
-            outline: none;
-            border-bottom: 1px dashed rgba(255,255,255,0.4);
-            cursor: text;
+            font-weight: bold; color: #ffd166; outline: none;
+            border-bottom: 1px dashed rgba(255,255,255,0.4); cursor: text;
         }
-
-        .pair-label:focus {
-            background: rgba(255,255,255,0.2);
-            border-radius: 3px;
-        }
-
-        /* --- ÉCRAN RAPIDE DE VITESSE EN BAS À DROITE --- */
+ 
         .quick-speed-box {
-            position: fixed;
-            bottom: 25px;
-            right: 25px;
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid var(--border-color);
-            padding: 10px 18px;
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-            z-index: 20;
-            font-size: 0.9rem;
-            font-weight: 600;
+            position: fixed; bottom: 25px; right: 25px;
+            background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color);
+            padding: 10px 18px; border-radius: 30px; display: flex; align-items: center;
+            gap: 12px; backdrop-filter: blur(10px); box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            z-index: 20; font-size: 0.9rem; font-weight: 600; color: white;
         }
-
-        .quick-speed-box input[type="range"] {
-            width: 100px;
-            cursor: pointer;
-        }
-
-        /* --- ANNONCE POPUP DU GAGNANT --- */
+        .quick-speed-box input[type="range"] { width: 100px; cursor: pointer; }
+ 
         .announcement-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(5px);
-            justify-content: center;
-            align-items: center;
-            z-index: 90;
+            display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 90;
         }
-
         .announcement-card {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            border: 2px solid var(--accent);
-            padding: 30px 50px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: linear-gradient(135deg, #1e293b, #0f172a); border: 2px solid var(--accent);
+            padding: 30px 50px; border-radius: 20px; text-align: center;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
-        .announcement-card h4 {
-            margin: 0 0 10px 0;
-            color: #ffd166;
-            font-size: 1.2rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .announcement-card .names {
-            font-size: 2.2rem;
-            font-weight: bold;
-            color: #ffffff;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        }
-
-        /* --- CANVAS CONFETTI --- */
-        #confetti-canvas {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 100;
-        }
-
-        /* --- MODAL PARAMÈTRES --- */
+        .announcement-card h4 { margin: 0 0 10px 0; color: #ffd166; font-size: 1.2rem; text-transform: uppercase; }
+        .announcement-card .names { font-size: 2.2rem; font-weight: bold; color: #ffffff; }
+ 
+        #confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+ 
+        /* Modal Paramètres */
         .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
+            display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px); justify-content: center; align-items: center; z-index: 100;
         }
-
         .modal-content {
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 750px;
-            max-height: 90vh;
-            overflow-y: auto;
-            border: 1px solid rgba(255,255,255,0.2);
+            background: #1e293b; color: white; padding: 30px; border-radius: 15px;
+            width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 40px rgba(0,0,0,0.7);
         }
-
+ 
         .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
-        .form-group label { margin-bottom: 5px; font-weight: bold; color: #cbd5e1; }
-        .form-group input, .form-group textarea, .form-group select {
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #475569;
-            background: #0f172a;
-            color: white;
-            font-family: inherit;
+        .form-group label { margin-bottom: 5px; font-weight: bold; color: #cbd5e1; font-size: 0.9rem;}
+        .form-group input[type="text"], .form-group textarea, .form-group select {
+            padding: 10px; border-radius: 5px; border: 1px solid #475569;
+            background: #0f172a; color: white; font-family: inherit;
         }
-
-        .flex-row { display: flex; gap: 15px; }
-        .flex-row > * { flex: 1; }
-
+        .checkbox-group { flex-direction: row; align-items: center; gap: 10px; }
+        .checkbox-group input { width: 18px; height: 18px; }
+ 
+        .flex-row { display: flex; gap: 15px; flex-wrap: wrap; }
+        .flex-row > * { flex: 1; min-width: 200px; }
+ 
         .modal-actions {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #475569;
+            display: flex; justify-content: space-between; margin-top: 20px;
+            padding-top: 20px; border-top: 1px solid #475569; flex-wrap: wrap; gap: 10px;
         }
-
-        .history-controls button {
-            background: #475569; padding: 8px 15px; border-radius: 5px; border: none; color: white; cursor:pointer;
+        .history-controls button, .tool-btn {
+            background: #475569; padding: 8px 15px; border-radius: 5px; border: none;
+            color: white; cursor:pointer; font-size: 0.9rem; transition: background 0.2s, transform 0.1s;
         }
-
-        .color-pickers-grid {
-            display: flex;
-            gap: 10px;
-            margin-top: 8px;
-            flex-wrap: wrap;
+        .history-controls button:hover, .tool-btn:hover { background: #64748b; transform: translateY(-1px); }
+ 
+        .color-pickers-grid { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+        .color-picker-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.8rem; color: #94a3b8; }
+        .color-picker-item input[type="color"] { -webkit-appearance: none; border: none; width: 38px; height: 38px; border-radius: 8px; cursor: pointer; padding: 0; background: none; }
+ 
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+ 
+        /* --- Progression --- */
+        .progress-wrap {
+            width: 100%; max-width: 320px; margin: 0 auto 4px auto;
         }
-
-        .color-picker-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.8rem;
-            color: #94a3b8;
+        .progress-label { font-size: 0.8rem; color: #cbd5e1; text-align: center; margin-bottom: 4px; }
+        .progress-bar-bg {
+            width: 100%; height: 8px; border-radius: 6px; background: rgba(255,255,255,0.12);
+            overflow: hidden; border: 1px solid var(--border-color);
         }
-
-        .color-picker-item input[type="color"] {
-            -webkit-appearance: none;
-            border: none;
-            width: 38px;
-            height: 38px;
-            border-radius: 8px;
-            cursor: pointer;
-            padding: 0;
-            background: none;
+        .progress-bar-fill {
+            height: 100%; background: linear-gradient(90deg, var(--accent), #ffd166);
+            width: 0%; transition: width 0.4s ease;
         }
-
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+ 
+        /* --- Effet de suspense en fin de tirage --- */
+        @keyframes suspense-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 209, 102, 0.25); }
+            50% { box-shadow: 0 0 45px rgba(255, 209, 102, 0.85); }
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+        .wheel-container.suspense { animation: suspense-glow 0.25s ease-in-out infinite; }
+ 
+        /* --- Couleurs : ajout/suppression --- */
+        .color-tool-btn {
+            width: 38px; height: 38px; border-radius: 8px; border: 1px dashed var(--border-color);
+            background: rgba(255,255,255,0.05); color: var(--text-color); cursor: pointer;
+            font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+        }
+        .color-tool-btn:hover { background: rgba(255,255,255,0.15); }
+        .color-picker-item .remove-color-btn {
+            background: rgba(239,68,68,0.85); border: none; color: white; width: 14px; height: 14px;
+            border-radius: 50%; font-size: 0.6rem; cursor: pointer; line-height: 1; padding: 0; margin-top: -2px;
+        }
+ 
+        @media (max-width: 900px) {
+            body { overflow: auto; }
+            .main-content { flex-direction: column; gap: 40px; padding-bottom: 100px; }
+            .center-controls { order: -1; width: 100%; }
         }
     </style>
 </head>
 <body>
-
+ 
     <canvas id="confetti-canvas"></canvas>
-
+ 
     <header>
         <div class="title-container">
             <img src="logofp.png" alt="Logo FP">
-            <h1>Tirage des binômes de la fabrique pédagogique de l'AM</h1>
+            <div>
+                <h1>Tirage des binômes de la fabrique pédagogique de l'AM</h1>
+                <small id="current-config-badge" style="opacity:0.75; font-size:0.85rem; font-weight:normal; color: #cbd5e1;"></small>
+            </div>
         </div>
-        <button class="btn-icon" id="btn-settings" title="Paramètres">⚙️</button>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <button class="secondary-btn" id="btn-share-url" title="Copier le lien de configuration">🔗 Partager</button>
+            <button class="btn-icon" id="btn-presentation" title="Mode Présentation (F)" aria-label="Présentation">🖥️</button>
+            <button class="btn-icon" id="btn-settings" title="Paramètres (Échap pour fermer)" aria-label="Paramètres">⚙️</button>
+        </div>
     </header>
-
+ 
     <div class="main-content">
         <div class="wheel-container">
             <h2 id="title-w1">Pioche 1</h2>
-            <div class="pointer"></div>
-            <canvas id="wheel1" class="wheel-canvas" width="350" height="350"></canvas>
+            <div class="pointer" id="pointer1"></div>
+            <canvas id="wheel1" class="wheel-canvas"></canvas>
         </div>
-
+ 
         <div class="center-controls">
+            <div class="progress-wrap presentation-hidden">
+                <div class="progress-label" id="progress-label">Tirage 0 / 0</div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar-fill"></div></div>
+            </div>
+ 
             <button class="action-btn" id="btn-spin">LANCER LE BINÔME</button>
+            
+            <div style="display:flex; gap: 10px; flex-wrap: wrap; justify-content:center;" class="presentation-hidden">
+                <button class="secondary-btn" id="btn-undo-draw" style="display:none;" title="Annuler le dernier tirage">↩️ Annuler Binôme</button>
+                <button class="secondary-btn" id="btn-copy-text" title="Copier la liste texte">📋 Copier</button>
+            </div>
+ 
             <button class="action-btn" id="btn-reset" style="background:#dc2626; display:none;">RÉINITIALISER</button>
-            <button class="action-btn" id="btn-export-table" style="background:#2563eb; display:none; font-size: 0.95rem; padding: 10px 20px;">Exporter les binômes dans un tableau...</button>
+            <div style="display:flex; gap:10px;">
+                <button class="action-btn" id="btn-export-table" style="background:#2563eb; display:none; font-size: 0.95rem; padding: 10px 20px;">Exporter (CSV)...</button>
+                <button class="action-btn" id="btn-export-xlsx" style="background:#15803d; display:none; font-size: 0.95rem; padding: 10px 20px;">📊 Exporter (Excel)</button>
+            </div>
             
             <div class="results">
                 <h3 id="title-group" style="margin-top:0;">Binômes formés</h3>
                 <div id="pairs-list"></div>
             </div>
         </div>
-
+ 
         <div class="wheel-container">
             <h2 id="title-w2">Pioche 2</h2>
-            <div class="pointer"></div>
-            <canvas id="wheel2" class="wheel-canvas" width="350" height="350"></canvas>
+            <div class="pointer" id="pointer2"></div>
+            <canvas id="wheel2" class="wheel-canvas"></canvas>
         </div>
     </div>
-
-    <!-- Sélecteur de vitesse rapide -->
+ 
     <div class="quick-speed-box">
+        <label style="display:flex; align-items:center; cursor:pointer; gap:5px; margin-right: 10px;" title="Couper le son">
+            <input type="checkbox" id="toggle-mute"> 🔇
+        </label>
         <span>⚡ Vitesse :</span>
         <input type="range" id="quick-speed-slider" min="1" max="10" step="0.5">
         <span id="quick-speed-val">4s</span>
     </div>
-
-    <!-- Overlay Annonce tirage -->
+ 
     <div class="announcement-overlay" id="announcement-overlay">
         <div class="announcement-card">
             <h4 id="announce-label">Nouveau binôme formé !</h4>
             <div class="names" id="announce-names">... & ...</div>
         </div>
     </div>
-
-    <!-- Modal Paramètres -->
-    <div class="modal" id="settings-modal">
+ 
+    <div class="modal" id="history-modal" role="dialog" aria-modal="true">
+        <div class="modal-content" style="max-width: 500px;">
+            <h2 style="margin-top:0; border-bottom: 1px solid #475569; padding-bottom: 10px;">Historique des rencontres</h2>
+            <p style="font-size: 0.9rem; color: #cbd5e1;">Combinaisons formées lors des sessions précédentes (Soft-exclusion activée). L'algorithme évitera ces paires si possible.</p>
+            <div id="history-list" style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; max-height: 250px; overflow-y: auto; margin-bottom: 20px; font-size: 0.95rem;">
+                </div>
+            <div class="modal-actions" style="justify-content: space-between; border-top: none; margin-top: 0; padding-top: 0;">
+                <button class="action-btn" style="background:#dc2626; font-size: 1rem; padding: 10px 20px;" id="btn-clear-history">Vider l'historique</button>
+                <button class="action-btn" style="background:#475569; font-size: 1rem; padding: 10px 20px;" onclick="document.getElementById('history-modal').style.display='none'">Fermer</button>
+            </div>
+        </div>
+    </div>
+ 
+    <div class="modal" id="settings-modal" role="dialog" aria-modal="true">
         <div class="modal-content">
             <h2 style="margin-top:0; border-bottom: 1px solid #475569; padding-bottom: 10px;">Paramètres</h2>
+            
+            <div class="form-group">
+                <label>Nom / Version de la configuration</label>
+                <input type="text" id="set-config-name" placeholder="Ex: Promo Web 2026 - Atelier 1">
+            </div>
             
             <div class="flex-row">
                 <div class="form-group">
@@ -380,27 +360,48 @@
                     <textarea id="set-names2" rows="5"></textarea>
                 </div>
             </div>
-
-            <div class="form-group">
-                <label>Noms personnalisés des binômes (un par ligne - optionnel)</label>
-                <textarea id="set-custom-pair-names" rows="3" placeholder="Ex: Équipe Alpha&#10;Équipe Bêta&#10;Table 1"></textarea>
-            </div>
-
+ 
             <div class="flex-row">
                 <div class="form-group">
-                    <label>Nom de la Roue 1</label>
+                    <label>Noms personnalisés des binômes (optionnel)</label>
+                    <textarea id="set-custom-pair-names" rows="3" placeholder="Ex: Équipe Alpha&#10;Équipe Bêta"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Exclusions / Anti-collision (ex: Alice - Bob)</label>
+                    <textarea id="set-exclusions" rows="3" placeholder="Alice - Bob&#10;Mounaim - Priscille"></textarea>
+                </div>
+            </div>
+ 
+            <div class="flex-row">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="set-allow-trinomes">
+                    <label for="set-allow-trinomes">Créer un trinôme automatiquement si effectif impair</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="set-enable-speech">
+                    <label for="set-enable-speech">Activer la synthèse vocale des résultats</label>
+                </div>
+            </div>
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="set-multi-session">
+                <label for="set-multi-session">Mémoriser les tirages pour éviter les répétitions futures (Soft-exclusion)</label>
+            </div>
+ 
+            <div class="flex-row">
+                <div class="form-group">
+                    <label>Nom Roue 1</label>
                     <input type="text" id="set-title1">
                 </div>
                 <div class="form-group">
-                    <label>Nom de la Roue 2</label>
+                    <label>Nom Roue 2</label>
                     <input type="text" id="set-title2">
                 </div>
                 <div class="form-group">
-                    <label>Titre de la zone de résultats</label>
+                    <label>Titre Résultats</label>
                     <input type="text" id="set-group-title">
                 </div>
             </div>
-
+ 
             <div class="form-group">
                 <label>Palette de couleur des roues</label>
                 <select id="set-palette">
@@ -411,37 +412,51 @@
                     <option value="ocean">Océan</option>
                     <option value="forest">Forêt</option>
                     <option value="warm">Épices / Chaud</option>
+                    <option value="cyberpunk">Cyberpunk</option>
+                    <option value="sunset">Sunset (Coucher de soleil)</option>
+                    <option value="autumn">Automne</option>
                 </select>
-                <label style="margin-top: 10px; font-size: 0.9em; color: #94a3b8;">Ajuster chaque couleur individuellement :</label>
                 <div class="color-pickers-grid" id="color-pickers-container"></div>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button type="button" class="color-tool-btn" id="btn-add-color" title="Ajouter une couleur">➕</button>
+                    <button type="button" class="color-tool-btn" id="btn-remove-color" title="Supprimer la dernière couleur">🗑️</button>
+                </div>
             </div>
-
+ 
             <div class="form-group">
-                <label>Fond d'écran</label>
-                <input type="color" id="set-bg-color">
-                <label style="margin-top:10px; font-size:0.9em;">Ou importer une image :</label>
-                <input type="file" id="set-bg-image" accept="image/*">
+                <label>Fond d'écran (Couleur ou Image)</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="color" id="set-bg-color">
+                    <input type="file" id="set-bg-image" accept="image/*">
+                    <button class="tool-btn" id="btn-clear-bg">Effacer l'image</button>
+                </div>
+                <small style="color:#94a3b8;">L'image sera automatiquement compressée pour éviter de saturer la mémoire.</small>
             </div>
-
+ 
             <div class="modal-actions">
                 <div class="history-controls">
-                    <button id="btn-undo" title="Annuler">↩️ Annuler</button>
-                    <button id="btn-redo" title="Rétablir">↪️ Rétablir</button>
+                    <button id="btn-undo" title="Annuler modification">↩️ Annuler</button>
+                    <button id="btn-redo" title="Rétablir modification">↪️ Rétablir</button>
                 </div>
                 <div class="history-controls">
-                    <button id="btn-export" title="Télécharger le cache">📥 Exporter (.json)</button>
+                    <button id="btn-export" title="Télécharger le cache">📥 Exporter JSON</button>
                     <input type="file" id="btn-import" accept=".json" style="display:none;">
-                    <button onclick="document.getElementById('btn-import').click()" title="Ouvrir un cache">📤 Importer</button>
+                    <button onclick="document.getElementById('btn-import').click()">📤 Importer JSON</button>
                 </div>
             </div>
-
+ 
+            <div class="modal-actions" style="margin-top: 15px; padding-top: 15px;">
+                <button class="tool-btn" id="btn-manage-history" style="background: #3b82f6;">📖 Gérer l'historique des tirages</button>
+                <button class="tool-btn" id="btn-factory-reset" style="background: #b91c1c;">🔄 Rétablir la configuration d'usine</button>
+            </div>
+ 
             <div class="modal-actions" style="justify-content: flex-end; gap: 15px;">
                 <button class="action-btn" style="background:#475569; padding: 10px 20px;" id="btn-close-settings">Annuler</button>
                 <button class="action-btn" style="padding: 10px 20px;" id="btn-save-settings">Enregistrer</button>
             </div>
         </div>
     </div>
-
+ 
     <script>
         const presetPalettes = {
             custom: ['#7A4E47', '#CDB0A1', '#B98E61', '#C7B89C', '#DDDDCF', '#DBCEC3'],
@@ -450,253 +465,541 @@
             neon: ['#00f5d4', '#7b2cbf', '#f72585', '#4cc9f0', '#7209b7', '#480ca8'],
             ocean: ['#03045e', '#0077b6', '#00b4d8', '#90e0ef', '#caf0f8', '#0096c7'],
             forest: ['#2d6a4f', '#40916c', '#52b788', '#74c69d', '#95d5b2', '#d8f3dc'],
-            warm: ['#d00000', '#dc2f02', '#e85d04', '#f48c06', '#faa307', '#ffba08']
+            warm: ['#d00000', '#dc2f02', '#e85d04', '#f48c06', '#faa307', '#ffba08'],
+            cyberpunk: ['#fcee0a', '#00ff00', '#ff003c', '#00ffff', '#7122fa', '#ff00ff'],
+            sunset: ['#ff7b54', '#ffb26b', '#ffd56b', '#939b62', '#e05297', '#f3a683'],
+            autumn: ['#8c271e', '#d96c06', '#f2b705', '#a67c52', '#593a28', '#c44536']
         };
-
+ 
         let config = {
-            names1: ["mounaim", "patricia", "marine", "kevin", "juliette", "vincent B"],
-            names2: ["priscille", "clément", "vincent M", "domitille", "lucie", "Murielle"],
-            customPairNames: [],
-            title1: "Pioche 1",
-            title2: "Pioche 2",
-            groupTitle: "Binômes formés",
-            speed: 4,
-            paletteKey: 'custom',
-            activeColors: ['#7A4E47', '#CDB0A1', '#B98E61', '#C7B89C', '#DDDDCF', '#DBCEC3'],
-            bgColor: '#111936',
-            bgImage: ''
+            configName: "Configuration Par Défaut",
+            names1: ["Mounaim", "Patricia", "Marine", "Kevin", "Juliette", "Vincent B"],
+            names2: ["Priscille", "Clément", "Vincent M", "Domitille", "Lucie", "Murielle"],
+            customPairNames: [], exclusions: [],
+            allowTrinomes: true, speechEnabled: false, multiSession: true,
+            title1: "Pioche 1", title2: "Pioche 2", groupTitle: "Binômes formés",
+            speed: 4, paletteKey: 'custom', activeColors: presetPalettes.custom.slice(),
+            bgColor: '#111936', bgImage: ''
         };
-
-        let activeNames1 = [];
-        let activeNames2 = [];
-        let pairs = [];
-        let isSpinning = false;
-
-        let history = [];
-        let historyIndex = -1;
-
+ 
+        let activeNames1 = [], activeNames2 = [], pairs = [];
+        let isSpinning = false, isMuted = false;
+        let pastSessions = JSON.parse(localStorage.getItem('fp_past_sessions') || '[]');
+        
+        // Préchargement du logo pour l'export PNG
+        const logoImg = new Image();
+        logoImg.src = 'logofp.png';
+ 
+        // États d'animation
+        let currentRot1 = 0, currentRot2 = 0;
+        let animationFrameId;
+ 
+        let history = [], historyIndex = -1;
+ 
         function init() {
-            loadConfig();
+            // Lecture URL Sharing
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('cfg')) {
+                try {
+                    config = JSON.parse(decodeURIComponent(atob(params.get('cfg'))));
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch(e) { console.error("URL Invalide"); }
+            } else {
+                loadConfig();
+            }
+            
+            const pendingAutosave = peekSessionAutosave();
+ 
             saveStateToHistory();
+            initCanvas('wheel1'); initCanvas('wheel2');
             resetGame();
+            if (pendingAutosave) applySessionAutosave(pendingAutosave);
             setupEventListeners();
         }
-
-        function drawWheel(canvasId, names) {
+ 
+        // Init Canvas Retina/4K
+        function initCanvas(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const dpr = window.devicePixelRatio || 1;
+            const size = 350; // Fixe
+            canvas.width = size * dpr;
+            canvas.height = size * dpr;
+            const ctx = canvas.getContext("2d");
+            ctx.scale(dpr, dpr);
+        }
+ 
+        function drawWheel(canvasId, names, currentRotation = 0) {
             const canvas = document.getElementById(canvasId);
             const ctx = canvas.getContext("2d");
-            const w = canvas.width;
-            const h = canvas.height;
-            const radius = w / 2;
+            const radius = 175; // 350 / 2
             const colors = config.activeColors;
             
-            ctx.clearRect(0, 0, w, h);
+            ctx.clearRect(0, 0, 350, 350);
             
             if(names.length === 0) {
-                ctx.beginPath();
-                ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
-                ctx.fillStyle = "#333";
-                ctx.fill();
-                ctx.fillStyle = "#fff";
-                ctx.textAlign = "center";
-                ctx.font = "20px Arial";
-                ctx.fillText("Vide", radius, radius);
+                ctx.beginPath(); ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = "#333"; ctx.fill();
+                ctx.fillStyle = "#fff"; ctx.textAlign = "center";
+                ctx.font = "20px 'Segoe UI'"; ctx.fillText("Vide", radius, radius);
                 return;
             }
-
+ 
             const arc = (2 * Math.PI) / names.length;
-
+            ctx.save();
+            ctx.translate(radius, radius);
+            ctx.rotate(currentRotation * Math.PI / 180);
+            ctx.translate(-radius, -radius);
+ 
             for (let i = 0; i < names.length; i++) {
                 ctx.beginPath();
                 ctx.fillStyle = colors[i % colors.length];
                 ctx.moveTo(radius, radius);
                 ctx.arc(radius, radius, radius, i * arc, (i + 1) * arc);
                 ctx.fill();
+                
                 ctx.save();
-
                 ctx.translate(radius, radius);
                 ctx.rotate(i * arc + arc / 2);
-                ctx.textAlign = "right";
-                ctx.fillStyle = "#ffffff";
-                ctx.shadowColor = "rgba(0,0,0,0.6)";
-                ctx.shadowBlur = 4;
-                ctx.font = "bold 18px 'Segoe UI'";
+                ctx.textAlign = "right"; ctx.fillStyle = "#ffffff";
+                ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.shadowBlur = 4;
+                
+                let fontSize = 18; ctx.font = `bold ${fontSize}px 'Segoe UI'`;
+                let textWidth = ctx.measureText(names[i]).width;
+                while (textWidth > radius - 30 && fontSize > 10) {
+                    fontSize--; ctx.font = `bold ${fontSize}px 'Segoe UI'`;
+                    textWidth = ctx.measureText(names[i]).width;
+                }
                 ctx.fillText(names[i], radius - 15, 6);
                 ctx.restore();
             }
+            ctx.restore();
         }
-
+ 
+        function playVictoryChime() {
+            if (isMuted) return;
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const notes = [523.25, 659.25, 783.99, 1046.5]; // Do-Mi-Sol-Do : petit jingle chaleureux
+                notes.forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.type = 'triangle';
+                    const startTime = audioCtx.currentTime + i * 0.12;
+                    osc.frequency.setValueAtTime(freq, startTime);
+                    gain.gain.setValueAtTime(0.0001, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.15, startTime + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.5);
+                    osc.start(startTime); osc.stop(startTime + 0.55);
+                });
+            } catch(e) {}
+        }
+ 
+        function playTick() {
+            if (isMuted) return;
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            } catch(e) {}
+        }
+ 
+        function isPairExcluded(n1, n2) {
+            const pair1 = `${n1}-${n2}`.toLowerCase();
+            const pair2 = `${n2}-${n1}`.toLowerCase();
+            
+            // Exclusions strictes (Paramètres)
+            for (let ex of config.exclusions) {
+                const parts = ex.toLowerCase().split('-').map(s=>s.trim());
+                if (parts.length === 2) {
+                    const exStr = `${parts[0]}-${parts[1]}`;
+                    const exStrRev = `${parts[1]}-${parts[0]}`;
+                    if (pair1 === exStr || pair1 === exStrRev) return true;
+                }
+            }
+            // Exclusions douces (Multi-session memory) - évité si possible, mais autorisé si blocage
+            if (config.multiSession && pastSessions.includes(pair1)) return "soft";
+            
+            return false;
+        }
+ 
+        function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+        // Ralentissement plus marqué en fin de course pour accentuer le suspense
+        function easeOutSuspense(x) { return 1 - Math.pow(1 - x, 5); }
+ 
+        // Calcule l'index du segment actuellement sous le pointeur (en haut du cercle),
+        // en normalisant proprement l'angle par rapport à 0/360°, pour garder l'affichage
+        // (tick sonore, rebond du pointeur) parfaitement synchronisé avec le dessin de la roue.
+        function getSegmentUnderPointer(rotationDeg, arcDeg, count) {
+            if (!count) return -1;
+            const normalizedRot = (360 - (rotationDeg % 360) + 360) % 360;
+            return Math.floor(normalizedRot / arcDeg) % count;
+        }
+ 
+        function triggerPointerBounce(pointerId) {
+            const ptr = document.getElementById(pointerId);
+            ptr.classList.remove('bounce');
+            void ptr.offsetWidth; // trigger reflow
+            ptr.classList.add('bounce');
+        }
+ 
         function spin() {
             if (isSpinning || activeNames1.length === 0 || activeNames2.length === 0) return;
             isSpinning = true;
             document.getElementById('btn-spin').disabled = true;
-
-            const wheel1 = document.getElementById('wheel1');
-            const wheel2 = document.getElementById('wheel2');
-
-            const rand1 = Math.floor(Math.random() * activeNames1.length);
-            const rand2 = Math.floor(Math.random() * activeNames2.length);
-
-            const currentSpeed = config.speed;
-            const baseRot = 360 * currentSpeed;
+ 
+            // Détermination des gagnants avec système d'anti-collision
+            let rand1, rand2, attempts = 0, bestR1, bestR2;
+            do {
+                rand1 = Math.floor(Math.random() * activeNames1.length);
+                rand2 = Math.floor(Math.random() * activeNames2.length);
+                let status = isPairExcluded(activeNames1[rand1], activeNames2[rand2]);
+                if (status === false) { bestR1 = rand1; bestR2 = rand2; break; }
+                if (status === "soft") { bestR1 = rand1; bestR2 = rand2; } // Garde en backup si pas mieux
+                attempts++;
+            } while (attempts < 50);
+ 
+            if (bestR1 === undefined) { bestR1 = rand1; bestR2 = rand2; } // Forcé si tout est bloqué
+            rand1 = bestR1; rand2 = bestR2;
+ 
+            const duration = config.speed * 1000;
+            const startRot1 = currentRot1, startRot2 = currentRot2;
+            
             const arc1 = 360 / activeNames1.length;
             const arc2 = 360 / activeNames2.length;
             
-            const stopAngle1 = baseRot + (360 - (rand1 * arc1) - (arc1 / 2) - 90);
-            const stopAngle2 = baseRot + (360 - (rand2 * arc2) - (arc2 / 2) - 90);
-
-            wheel1.style.transition = `transform ${currentSpeed}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
-            wheel2.style.transition = `transform ${currentSpeed}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
-            
-            const currentRot1 = parseFloat(wheel1.dataset.rotation || 0);
-            const currentRot2 = parseFloat(wheel2.dataset.rotation || 0);
-            
-            const newRot1 = currentRot1 + stopAngle1;
-            const newRot2 = currentRot2 + stopAngle2;
-
-            wheel1.style.transform = `rotate(${newRot1}deg)`;
-            wheel2.style.transform = `rotate(${newRot2}deg)`;
-            
-            wheel1.dataset.rotation = newRot1;
-            wheel2.dataset.rotation = newRot2;
-
-            const visualDelay = 1500;
-
-            setTimeout(() => {
-                const name1 = activeNames1[rand1];
-                const name2 = activeNames2[rand2];
+            // Calcul angle cible (multiples tours + alignement sur le gagnant)
+            // -90 pour compenser le fait que le pointeur est en haut
+            const targetRot1 = startRot1 + (360 * config.speed) + (360 - (rand1 * arc1) - (arc1 / 2) - 90);
+            const targetRot2 = startRot2 + (360 * config.speed) + (360 - (rand2 * arc2) - (arc2 / 2) - 90);
+ 
+            let startTime = null;
+            let lastSegment1 = -1, lastSegment2 = -1;
+ 
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+                let progress = Math.min(elapsed / duration, 1);
+                let ease = easeOutSuspense(progress);
+ 
+                currentRot1 = startRot1 + (targetRot1 - startRot1) * ease;
+                currentRot2 = startRot2 + (targetRot2 - startRot2) * ease;
+ 
+                drawWheel('wheel1', activeNames1, currentRot1);
+                drawWheel('wheel2', activeNames2, currentRot2);
+ 
+                // Détection changement de segment pour tick audio (index normalisé, cf. correction du bug de décalage)
+                let currentSeg1 = getSegmentUnderPointer(currentRot1, arc1, activeNames1.length);
+                let currentSeg2 = getSegmentUnderPointer(currentRot2, arc2, activeNames2.length);
                 
-                const pairIndex = pairs.length;
-                let pairLabel = `Binôme ${pairIndex + 1}`;
-                if (config.customPairNames && config.customPairNames[pairIndex]) {
-                    pairLabel = config.customPairNames[pairIndex];
+                if (currentSeg1 !== lastSegment1 || currentSeg2 !== lastSegment2) {
+                    playTick();
+                    if (currentSeg1 !== lastSegment1) triggerPointerBounce('pointer1');
+                    if (currentSeg2 !== lastSegment2) triggerPointerBounce('pointer2');
+                    lastSegment1 = currentSeg1; lastSegment2 = currentSeg2;
                 }
-
-                showAnnouncement(pairLabel, `${name1} & ${name2}`, () => {
-                    pairs.push({ label: pairLabel, names: `${name1} & ${name2}` });
-                    
-                    activeNames1.splice(rand1, 1);
-                    activeNames2.splice(rand2, 1);
-                    
-                    updateUI();
-                    
-                    isSpinning = false;
-                    
-                    if (activeNames1.length === 0 || activeNames2.length === 0) {
-                        document.getElementById('btn-spin').style.display = 'none';
-                        document.getElementById('btn-reset').style.display = 'block';
-                        document.getElementById('btn-export-table').style.display = 'block';
-                        triggerConfetti();
-                    } else {
-                        document.getElementById('btn-spin').disabled = false;
-                    }
-                });
-            }, (currentSpeed * 1000) + visualDelay);
-        }
-
-        function showAnnouncement(label, pairNames, callback) {
-            const overlay = document.getElementById('announcement-overlay');
-            document.getElementById('announce-label').textContent = label;
-            document.getElementById('announce-names').textContent = pairNames;
-            
-            overlay.style.display = 'flex';
-            
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                callback();
-            }, 2200);
-        }
-
-        function confirmReset() {
-            if (confirm("Voulez-vous vraiment réinitialiser le tirage et recommencer ?")) {
-                resetGame();
+ 
+                // Effet de suspense : ralentissement perçu + halo lumineux dans les 15 derniers %
+                const suspensePhase = progress > 0.85;
+                document.querySelectorAll('.wheel-container').forEach(el => el.classList.toggle('suspense', suspensePhase));
+ 
+                if (progress < 1) {
+                    animationFrameId = requestAnimationFrame(animate);
+                } else {
+                    document.querySelectorAll('.wheel-container').forEach(el => el.classList.remove('suspense'));
+                    finishSpin(rand1, rand2);
+                }
             }
+            animationFrameId = requestAnimationFrame(animate);
         }
-
-        function resetGame() {
-            activeNames1 = [...config.names1];
-            activeNames2 = [...config.names2];
-            pairs = [];
+ 
+        function finishSpin(rand1, rand2) {
+            triggerPointerBounce('pointer1'); triggerPointerBounce('pointer2');
             
-            const wheel1 = document.getElementById('wheel1');
-            const wheel2 = document.getElementById('wheel2');
+            const name1 = activeNames1[rand1];
+            const name2 = activeNames2[rand2];
             
-            wheel1.style.transition = 'none';
-            wheel2.style.transition = 'none';
-            wheel1.style.transform = 'rotate(0deg)';
-            wheel2.style.transform = 'rotate(0deg)';
-            wheel1.dataset.rotation = 0;
-            wheel2.dataset.rotation = 0;
-
+            let pairLabel = `Binôme ${pairs.length + 1}`;
+            if (config.customPairNames && config.customPairNames[pairs.length]) {
+                pairLabel = config.customPairNames[pairs.length];
+            }
+ 
+            // Trinômes auto
+            let isTrinome = false; let n3 = "";
+            activeNames1.splice(rand1, 1);
+            activeNames2.splice(rand2, 1);
+ 
+            if (config.allowTrinomes) {
+                if (activeNames1.length === 0 && activeNames2.length === 1) {
+                    n3 = ` & ${activeNames2[0]}`; activeNames2.splice(0, 1); isTrinome = true;
+                } else if (activeNames2.length === 0 && activeNames1.length === 1) {
+                    n3 = ` & ${activeNames1[0]}`; activeNames1.splice(0, 1); isTrinome = true;
+                }
+            }
+ 
+            const fullName = `${name1} & ${name2}${n3}`;
+ 
+            // Enregistrement Session
+            if (config.multiSession) {
+                pastSessions.push(`${name1}-${name2}`.toLowerCase());
+                if(isTrinome) {
+                    pastSessions.push(`${name1}-${n3.replace(' & ','')}`.toLowerCase());
+                    pastSessions.push(`${name2}-${n3.replace(' & ','')}`.toLowerCase());
+                }
+                localStorage.setItem('fp_past_sessions', JSON.stringify(pastSessions));
+            }
+ 
+            // Synthèse Vocale
+            if (config.speechEnabled && 'speechSynthesis' in window) {
+                let utterance = new SpeechSynthesisUtterance(`${pairLabel} : ${name1}, ${name2} ${isTrinome ? ', et '+n3.replace(' & ','') : ''}`);
+                utterance.lang = 'fr-FR';
+                window.speechSynthesis.speak(utterance);
+            }
+ 
+            showAnnouncement(pairLabel, fullName, () => {
+                pairs.push({ label: pairLabel, names: fullName, orig: {n1:name1, n2:name2, n3:n3.replace(' & ','')} });
+                
+                updateUI();
+                isSpinning = false;
+                
+                if (activeNames1.length === 0 || activeNames2.length === 0) {
+                    document.getElementById('btn-spin').style.display = 'none';
+                    document.getElementById('btn-reset').style.display = 'block';
+                    document.getElementById('btn-export-table').style.display = 'block';
+                    document.getElementById('btn-export-xlsx').style.display = 'block';
+                    document.getElementById('btn-undo-draw').style.display = 'none';
+                    triggerConfetti();
+                    playVictoryChime();
+                    clearSessionAutosave();
+                } else {
+                    document.getElementById('btn-spin').disabled = false;
+                    document.getElementById('btn-undo-draw').style.display = 'block';
+                    saveSessionAutosave();
+                }
+            });
+        }
+ 
+        function undoLastDraw() {
+            if (pairs.length === 0 || isSpinning) return;
+            const last = pairs.pop();
+            
+            // Re-insérer
+            if(last.orig.n1) activeNames1.push(last.orig.n1);
+            if(last.orig.n2) activeNames2.push(last.orig.n2);
+            if(last.orig.n3) {
+                if (config.names1.includes(last.orig.n3)) activeNames1.push(last.orig.n3);
+                else activeNames2.push(last.orig.n3);
+            }
+ 
+            if (config.multiSession) pastSessions.pop(); // Enlève le dernier save
+            
+            updateUI();
             document.getElementById('btn-spin').style.display = 'block';
             document.getElementById('btn-spin').disabled = false;
             document.getElementById('btn-reset').style.display = 'none';
             document.getElementById('btn-export-table').style.display = 'none';
-
+            document.getElementById('btn-export-xlsx').style.display = 'none';
+            if (pairs.length === 0) document.getElementById('btn-undo-draw').style.display = 'none';
+ 
+            if (pairs.length === 0) clearSessionAutosave(); else saveSessionAutosave();
+        }
+ 
+        function showAnnouncement(label, pairNames, callback) {
+            const overlay = document.getElementById('announcement-overlay');
+            document.getElementById('announce-label').textContent = label;
+            document.getElementById('announce-names').textContent = pairNames;
+            overlay.style.display = 'flex';
+            setTimeout(() => { overlay.style.display = 'none'; callback(); }, 2500);
+        }
+ 
+        function resetGame() {
+            cancelAnimationFrame(animationFrameId);
+            isSpinning = false;
+            activeNames1 = [...config.names1];
+            activeNames2 = [...config.names2];
+            pairs = [];
+            currentRot1 = 0; currentRot2 = 0;
+ 
+            document.getElementById('btn-spin').style.display = 'block';
+            document.getElementById('btn-spin').disabled = false;
+            document.getElementById('btn-reset').style.display = 'none';
+            document.getElementById('btn-export-table').style.display = 'none';
+            document.getElementById('btn-export-xlsx').style.display = 'none';
+            document.getElementById('btn-undo-draw').style.display = 'none';
+ 
+            clearSessionAutosave();
             applyConfigToApp();
             updateUI();
         }
-
+ 
+        // --- Sauvegarde automatique de la session en cours (sessionStorage) ---
+        // Permet de ne pas perdre un tirage si la page est rechargée par inadvertance.
+        const AUTOSAVE_KEY = 'fp_session_autosave';
+ 
+        function saveSessionAutosave() {
+            try {
+                sessionStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
+                    activeNames1, activeNames2, pairs,
+                    configName: config.configName
+                }));
+            } catch(e) {}
+        }
+ 
+        function clearSessionAutosave() {
+            try { sessionStorage.removeItem(AUTOSAVE_KEY); } catch(e) {}
+        }
+ 
+        function peekSessionAutosave() {
+            try {
+                const raw = sessionStorage.getItem(AUTOSAVE_KEY);
+                if (!raw) return null;
+                const saved = JSON.parse(raw);
+                if (!saved.pairs || saved.pairs.length === 0) return null;
+                return saved;
+            } catch(e) { return null; }
+        }
+ 
+        function applySessionAutosave(saved) {
+            if (saved.configName !== config.configName) return; // Config différente entre-temps, on ignore
+ 
+            if (confirm("Un tirage en cours a été détecté (page rechargée par inadvertance). Voulez-vous le reprendre là où vous l'aviez laissé ?")) {
+                activeNames1 = saved.activeNames1;
+                activeNames2 = saved.activeNames2;
+                pairs = saved.pairs;
+                document.getElementById('btn-undo-draw').style.display = pairs.length ? 'block' : 'none';
+                if (activeNames1.length === 0 || activeNames2.length === 0) {
+                    document.getElementById('btn-spin').style.display = 'none';
+                    document.getElementById('btn-reset').style.display = 'block';
+                    document.getElementById('btn-export-table').style.display = 'block';
+                    document.getElementById('btn-export-xlsx').style.display = 'block';
+                }
+                saveSessionAutosave();
+                updateUI();
+            } else {
+                clearSessionAutosave();
+            }
+        }
+ 
+        function copyPairsText() {
+            if (pairs.length === 0) return alert("Aucun binôme à copier.");
+            const txt = pairs.map(p => `${p.label} : ${p.names}`).join('\n');
+            navigator.clipboard.writeText(txt);
+            alert("Liste copiée dans le presse-papier !");
+        }
+ 
         function exportPairsTable() {
             if (pairs.length === 0) return;
-
-            let csvContent = "\ufeff";
-            csvContent += "Tirage des binômes de la fabrique pédagogique de l'AM;;\n;\n";
-            csvContent += "Binôme;Nom 1;Nom 2\n";
-
-            pairs.forEach(p => {
-                const parts = p.names.split(" & ");
-                const nom1 = parts[0] || "";
-                const nom2 = parts[1] || "";
-                
-                const labelClean = p.label.replace(/"/g, '""');
-                const nom1Clean = nom1.replace(/"/g, '""');
-                const nom2Clean = nom2.replace(/"/g, '""');
-
-                csvContent += `"${labelClean}";"${nom1Clean}";"${nom2Clean}"\n`;
-            });
-
+            let csvContent = "\ufeffTirage des binômes\nBinôme;Noms\n";
+            pairs.forEach(p => { csvContent += `"${p.label}";"${p.names}"\n`; });
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute('href', url);
-            downloadAnchor.setAttribute('download', 'binomes_retenus.csv');
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-            URL.revokeObjectURL(url);
+            const a = document.createElement('a'); a.href = url; a.download = 'binomes.csv';
+            document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
         }
-
+ 
+        function exportPairsXLSX() {
+            if (pairs.length === 0) return;
+            if (typeof XLSX === 'undefined') { alert("La bibliothèque Excel n'a pas pu se charger (vérifiez la connexion internet)."); return; }
+ 
+            const dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const titleRow = [config.groupTitle || 'Binômes formés'];
+            const subRow = [`Tirage du ${dateStr}`];
+            const header = ['Binôme', 'Participant 1', 'Participant 2', 'Participant 3 (trinôme)', 'Composition complète'];
+            const rows = pairs.map(p => [p.label, p.orig?.n1 || '', p.orig?.n2 || '', p.orig?.n3 || '', p.names]);
+ 
+            const wsData = [titleRow, subRow, [], header, ...rows];
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+ 
+            ws['!cols'] = [{ wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 30 }];
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }
+            ];
+            if (ws['A1']) ws['A1'].s = { font: { bold: true, sz: 16 } };
+            if (ws['A2']) ws['A2'].s = { font: { italic: true, sz: 10 } };
+            header.forEach((_, i) => {
+                const cellRef = XLSX.utils.encode_cell({ r: 3, c: i });
+                if (ws[cellRef]) ws[cellRef].s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "B98E61" } } };
+            });
+ 
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Binômes");
+            XLSX.writeFile(wb, `binomes_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+ 
+        window.updatePairLabel = function(idx, text) {
+            if(pairs[idx]) pairs[idx].label = text;
+            config.customPairNames[idx] = text;
+            saveConfigLocal();
+        };
+ 
+        window.updatePrePairLabel = function(idx, text) {
+            config.customPairNames[idx] = text;
+            saveConfigLocal();
+        };
+ 
+        function updateProgressBar() {
+            const totalExpected = pairs.length + Math.max(activeNames1.length, activeNames2.length);
+            const label = document.getElementById('progress-label');
+            const fill = document.getElementById('progress-bar-fill');
+            if (!label || !fill) return;
+            label.textContent = `Tirage ${pairs.length} / ${totalExpected}`;
+            fill.style.width = totalExpected ? `${Math.min(100, (pairs.length / totalExpected) * 100)}%` : '0%';
+        }
+ 
         function updateUI() {
-            drawWheel('wheel1', activeNames1);
-            drawWheel('wheel2', activeNames2);
+            drawWheel('wheel1', activeNames1, currentRot1);
+            drawWheel('wheel2', activeNames2, currentRot2);
+            updateProgressBar();
             
-            const list = document.getElementById('pairs-list');
-            list.innerHTML = pairs.map((p, i) => `
-                <div class="pair-item">
-                    <span class="pair-label" contenteditable="true" onblur="pairs[${i}].label = this.innerText">${p.label}</span> : ${p.names}
+            // Calcul du nombre de places restantes pour permettre l'édition préventive
+            const remaining = Math.max(activeNames1.length, activeNames2.length);
+ 
+            let html = pairs.map((p, i) => `
+                <div class="pair-item" style="border-left: 3px solid ${config.activeColors[i % config.activeColors.length]};">
+                    <span class="pair-label" contenteditable="true" onblur="updatePairLabel(${i}, this.innerText)">${p.label}</span> : ${p.names}
                 </div>
             `).join('');
-
+ 
+            for (let i = 0; i < remaining; i++) {
+                let idx = pairs.length + i;
+                let defLabel = config.customPairNames[idx] || `Binôme ${idx + 1}`;
+                html += `
+                <div class="pair-item" style="opacity: 0.55; border-left: 3px solid #64748b; background: rgba(255,255,255,0.03);">
+                    <span class="pair-label" contenteditable="true" onblur="updatePrePairLabel(${idx}, this.innerText)" title="Cliquez pour renommer à l'avance">${defLabel}</span> : <span style="font-style:italic; color:#94a3b8; user-select:none;">En attente...</span>
+                </div>`;
+            }
+ 
+            document.getElementById('pairs-list').innerHTML = html;
+ 
             document.getElementById('quick-speed-slider').value = config.speed;
             document.getElementById('quick-speed-val').textContent = config.speed + "s";
         }
-
+ 
+        // --- GESTION CONFIG ---
         function loadConfig() {
             const saved = localStorage.getItem('binomeConfig');
             if (saved) {
-                config = JSON.parse(saved);
-                if (!config.activeColors) {
-                    config.activeColors = presetPalettes[config.paletteKey || 'custom'];
-                }
+                const parsed = JSON.parse(saved);
+                config = { ...config, ...parsed }; 
+                if (!config.activeColors) config.activeColors = presetPalettes[config.paletteKey || 'custom'].slice();
+                if (!config.exclusions) config.exclusions = [];
             }
         }
-
+ 
         function saveConfigLocal() {
             localStorage.setItem('binomeConfig', JSON.stringify(config));
         }
-
+ 
         function applyConfigToApp() {
+            const badge = document.getElementById('current-config-badge');
+            if (badge) badge.textContent = config.configName ? `📦 ${config.configName}` : '';
+ 
             document.getElementById('title-w1').textContent = config.title1;
             document.getElementById('title-w2').textContent = config.title2;
             document.getElementById('title-group').textContent = config.groupTitle;
@@ -709,218 +1012,295 @@
                 document.body.style.backgroundColor = config.bgColor;
             }
         }
-
+ 
         function saveStateToHistory() {
-            if (historyIndex < history.length - 1) {
-                history = history.slice(0, historyIndex + 1);
-            }
-            history.push(JSON.parse(JSON.stringify(config)));
+            if (historyIndex < history.length - 1) history = history.slice(0, historyIndex + 1);
+            history.push(JSON.parse(JSON.stringify(config))); // Deep clone
             historyIndex++;
             updateHistoryButtons();
         }
-
+ 
         function undo() {
             if (historyIndex > 0) {
-                historyIndex--;
-                config = JSON.parse(JSON.stringify(history[historyIndex]));
-                populateSettingsModal();
-                updateHistoryButtons();
+                historyIndex--; config = JSON.parse(JSON.stringify(history[historyIndex]));
+                populateSettingsModal(); updateHistoryButtons();
             }
         }
-
+ 
         function redo() {
             if (historyIndex < history.length - 1) {
-                historyIndex++;
-                config = JSON.parse(JSON.stringify(history[historyIndex]));
-                populateSettingsModal();
-                updateHistoryButtons();
+                historyIndex++; config = JSON.parse(JSON.stringify(history[historyIndex]));
+                populateSettingsModal(); updateHistoryButtons();
             }
         }
-
+ 
         function updateHistoryButtons() {
             document.getElementById('btn-undo').disabled = (historyIndex <= 0);
             document.getElementById('btn-redo').disabled = (historyIndex >= history.length - 1);
-            
             document.getElementById('btn-undo').style.opacity = (historyIndex <= 0) ? 0.5 : 1;
             document.getElementById('btn-redo').style.opacity = (historyIndex >= history.length - 1) ? 0.5 : 1;
         }
-
+ 
         function openSettings() {
             populateSettingsModal();
             document.getElementById('settings-modal').style.display = 'flex';
         }
-
+ 
         function closeSettings() {
             document.getElementById('settings-modal').style.display = 'none';
         }
-
+ 
+        function factoryReset() {
+            if(confirm("Revenir à la configuration de base ? \n\nVotre configuration actuelle sera sauvegardée dans l'historique (vous pourrez cliquer sur 'Annuler' ↩️ pour y revenir).")) {
+                saveStateToHistory();
+                config = {
+                    configName: "Configuration Par Défaut",
+                    names1: ["Mounaim", "Patricia", "Marine", "Kevin", "Juliette", "Vincent B"],
+                    names2: ["Priscille", "Clément", "Vincent M", "Domitille", "Lucie", "Murielle"],
+                    customPairNames: [], exclusions: [],
+                    allowTrinomes: true, speechEnabled: false, multiSession: true,
+                    title1: "Pioche 1", title2: "Pioche 2", groupTitle: "Binômes formés",
+                    speed: 4, paletteKey: 'custom', activeColors: presetPalettes.custom.slice(),
+                    bgColor: '#111936', bgImage: ''
+                };
+                populateSettingsModal();
+                saveSettings();
+            }
+        }
+ 
+        function openHistoryModal() {
+            const list = document.getElementById('history-list');
+            if (pastSessions.length === 0) {
+                list.innerHTML = "<p style='text-align:center; color:#94a3b8; font-style:italic;'>Aucun historique enregistré pour l'instant.</p>";
+            } else {
+                list.innerHTML = pastSessions.map(pair => {
+                    const parts = pair.split('-');
+                    const formatted = parts.map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(' & ');
+                    return `<div style="background: rgba(255,255,255,0.1); margin-bottom: 8px; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #B98E61;">${formatted}</div>`;
+                }).join('');
+            }
+            document.getElementById('history-modal').style.display = 'flex';
+        }
+ 
         function populateSettingsModal() {
+            document.getElementById('set-config-name').value = config.configName || '';
             document.getElementById('set-names1').value = config.names1.join('\n');
             document.getElementById('set-names2').value = config.names2.join('\n');
             document.getElementById('set-custom-pair-names').value = (config.customPairNames || []).join('\n');
+            document.getElementById('set-exclusions').value = (config.exclusions || []).join('\n');
             document.getElementById('set-title1').value = config.title1;
             document.getElementById('set-title2').value = config.title2;
             document.getElementById('set-group-title').value = config.groupTitle;
             document.getElementById('set-palette').value = config.paletteKey || 'custom';
             document.getElementById('set-bg-color').value = config.bgColor;
+            document.getElementById('set-allow-trinomes').checked = config.allowTrinomes;
+            document.getElementById('set-enable-speech').checked = config.speechEnabled;
+            document.getElementById('set-multi-session').checked = config.multiSession;
             renderColorPickers();
         }
-
+ 
         function renderColorPickers() {
             const container = document.getElementById('color-pickers-container');
             container.innerHTML = '';
-            
             config.activeColors.forEach((color, index) => {
                 const item = document.createElement('div');
                 item.className = 'color-picker-item';
-                item.innerHTML = `
-                    <input type="color" value="${color}" data-index="${index}">
-                    <span>C${index + 1}</span>
-                `;
+                item.innerHTML = `<input type="color" value="${color}"><span>C${index + 1}</span><button type="button" class="remove-color-btn" title="Supprimer cette couleur">✕</button>`;
                 container.appendChild(item);
-                
-                item.querySelector('input').addEventListener('input', (e) => {
-                    config.activeColors[index] = e.target.value;
+                item.querySelector('input').addEventListener('input', (e) => { config.activeColors[index] = e.target.value; });
+                item.querySelector('.remove-color-btn').addEventListener('click', () => {
+                    if (config.activeColors.length <= 2) { alert("Il faut garder au moins 2 couleurs."); return; }
+                    config.activeColors.splice(index, 1);
+                    config.paletteKey = 'custom';
+                    renderColorPickers();
                 });
             });
         }
-
+ 
+        function processImageCompression(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.onload = function() {
+                    const maxW = 1920, maxH = 1080;
+                    let w = img.width, h = img.height;
+                    if (w > maxW || h > maxH) {
+                        const ratio = Math.min(maxW / w, maxH / h);
+                        w *= ratio; h *= ratio;
+                    }
+                    const cvs = document.createElement('canvas');
+                    cvs.width = w; cvs.height = h;
+                    cvs.getContext('2d').drawImage(img, 0, 0, w, h);
+                    callback(cvs.toDataURL('image/jpeg', 0.7)); // Compression JPEG 70%
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+ 
         function saveSettings() {
+            config.configName = document.getElementById('set-config-name').value.trim() || 'Sans titre';
             config.names1 = document.getElementById('set-names1').value.split('\n').map(s=>s.trim()).filter(s=>s);
             config.names2 = document.getElementById('set-names2').value.split('\n').map(s=>s.trim()).filter(s=>s);
             config.customPairNames = document.getElementById('set-custom-pair-names').value.split('\n').map(s=>s.trim()).filter(s=>s);
+            config.exclusions = document.getElementById('set-exclusions').value.split('\n').map(s=>s.trim()).filter(s=>s);
             config.title1 = document.getElementById('set-title1').value;
             config.title2 = document.getElementById('set-title2').value;
             config.groupTitle = document.getElementById('set-group-title').value;
             config.paletteKey = document.getElementById('set-palette').value;
             config.bgColor = document.getElementById('set-bg-color').value;
-
-            saveStateToHistory();
-            saveConfigLocal();
-            closeSettings();
-            resetGame();
+            config.allowTrinomes = document.getElementById('set-allow-trinomes').checked;
+            config.speechEnabled = document.getElementById('set-enable-speech').checked;
+            config.multiSession = document.getElementById('set-multi-session').checked;
+ 
+            if (!config.multiSession) localStorage.removeItem('fp_past_sessions');
+ 
+            saveStateToHistory(); saveConfigLocal(); closeSettings(); resetGame();
         }
-
-        function exportConfig() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "config_binomes.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        }
-
-        function importConfig(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    config = JSON.parse(e.target.result);
-                    saveStateToHistory();
-                    saveConfigLocal();
-                    populateSettingsModal();
-                    alert("Configuration chargée avec succès !");
-                } catch (err) {
-                    alert("Erreur lors de la lecture du fichier JSON.");
-                }
-            };
-            reader.readAsText(file);
-        }
-
+ 
         function triggerConfetti() {
             const canvas = document.getElementById('confetti-canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-
-            const particles = [];
-            const colors = ['#ffd166', '#00f5d4', '#f72585', '#7209b7', '#4cc9f0', '#ffffff'];
-
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            const particles = []; const colors = ['#ffd166', '#00f5d4', '#f72585', '#7209b7', '#4cc9f0', '#ffffff'];
+ 
             for (let i = 0; i < 150; i++) {
                 particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height - canvas.height,
-                    size: Math.random() * 8 + 4,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    speedY: Math.random() * 5 + 3,
-                    speedX: Math.random() * 4 - 2,
-                    rotation: Math.random() * 360,
-                    rotSpeed: Math.random() * 10 - 5
+                    x: Math.random() * canvas.width, y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4, color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 5 + 3, speedX: Math.random() * 4 - 2,
+                    rotation: Math.random() * 360, rotSpeed: Math.random() * 10 - 5
                 });
             }
-
-            let animationFrame;
+ 
+            let cFrame;
             function animate() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 let alive = false;
-
                 particles.forEach(p => {
-                    p.y += p.speedY;
-                    p.x += p.speedX;
-                    p.rotation += p.rotSpeed;
-
+                    p.y += p.speedY; p.x += p.speedX; p.rotation += p.rotSpeed;
                     if (p.y < canvas.height) alive = true;
-
-                    ctx.save();
-                    ctx.translate(p.x, p.y);
-                    ctx.rotate((p.rotation * Math.PI) / 180);
-                    ctx.fillStyle = p.color;
-                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
-                    ctx.restore();
+                    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color; ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); ctx.restore();
                 });
-
-                if (alive) {
-                    animationFrame = requestAnimationFrame(animate);
-                } else {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    cancelAnimationFrame(animationFrame);
-                }
+                if (alive) cFrame = requestAnimationFrame(animate); else ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
-
             animate();
         }
-
+ 
         function setupEventListeners() {
             document.getElementById('btn-spin').addEventListener('click', spin);
-            document.getElementById('btn-reset').addEventListener('click', confirmReset);
+            document.getElementById('btn-reset').addEventListener('click', () => { if(confirm("Réinitialiser le tirage ?")) resetGame(); });
             document.getElementById('btn-export-table').addEventListener('click', exportPairsTable);
+            document.getElementById('btn-export-xlsx').addEventListener('click', exportPairsXLSX);
             document.getElementById('btn-settings').addEventListener('click', openSettings);
             document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
             document.getElementById('btn-save-settings').addEventListener('click', saveSettings);
             
+            document.getElementById('btn-presentation').addEventListener('click', () => { document.body.classList.toggle('presentation-mode'); });
+            document.getElementById('btn-factory-reset').addEventListener('click', factoryReset);
+            document.getElementById('btn-manage-history').addEventListener('click', openHistoryModal);
+ 
+            document.getElementById('btn-clear-history').addEventListener('click', () => {
+                if(confirm("Êtes-vous sûr de vouloir effacer l'historique des rencontres ? Toutes les soft-exclusions seront perdues.")) {
+                    pastSessions = [];
+                    localStorage.removeItem('fp_past_sessions');
+                    openHistoryModal(); // Refresh the list
+                }
+            });
+ 
+            document.getElementById('btn-undo-draw').addEventListener('click', undoLastDraw);
+            document.getElementById('btn-copy-text').addEventListener('click', copyPairsText);
+            document.getElementById('toggle-mute').addEventListener('change', (e) => isMuted = e.target.checked);
+            
+            document.getElementById('btn-share-url').addEventListener('click', () => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('cfg', btoa(encodeURIComponent(JSON.stringify(config))));
+                navigator.clipboard.writeText(url.toString());
+                alert("Lien de la configuration copié dans le presse-papier !");
+            });
+ 
             document.getElementById('quick-speed-slider').addEventListener('input', (e) => {
                 config.speed = parseFloat(e.target.value);
                 document.getElementById('quick-speed-val').textContent = config.speed + "s";
                 saveConfigLocal();
             });
-
+ 
             document.getElementById('set-palette').addEventListener('change', (e) => {
-                const key = e.target.value;
-                config.paletteKey = key;
-                config.activeColors = [...presetPalettes[key]];
+                const key = e.target.value; config.paletteKey = key;
+                config.activeColors = [...presetPalettes[key]]; renderColorPickers();
+            });
+ 
+            document.getElementById('btn-add-color').addEventListener('click', () => {
+                const defaultColor = '#B98E61';
+                config.activeColors.push(defaultColor);
+                config.paletteKey = 'custom';
                 renderColorPickers();
             });
-
+            document.getElementById('btn-remove-color').addEventListener('click', () => {
+                if (config.activeColors.length <= 2) { alert("Il faut garder au moins 2 couleurs."); return; }
+                config.activeColors.pop();
+                config.paletteKey = 'custom';
+                renderColorPickers();
+            });
+ 
             document.getElementById('btn-undo').addEventListener('click', undo);
             document.getElementById('btn-redo').addEventListener('click', redo);
             
-            document.getElementById('btn-export').addEventListener('click', exportConfig);
-            document.getElementById('btn-import').addEventListener('change', importConfig);
-
-            document.getElementById('set-bg-image').addEventListener('change', function(e) {
+            document.getElementById('btn-export').addEventListener('click', () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config, null, 2));
+                const a = document.createElement('a'); a.href = dataStr; a.download = 'config_binomes.json';
+                document.body.appendChild(a); a.click(); a.remove();
+            });
+            document.getElementById('btn-import').addEventListener('change', (e) => {
+                const file = e.target.files[0]; if(!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        config = {...config, ...JSON.parse(ev.target.result)};
+                        saveStateToHistory(); saveConfigLocal(); populateSettingsModal(); resetGame();
+                        alert("Configuration importée !");
+                    } catch(err) { alert("Erreur Fichier."); }
+                };
+                reader.readAsText(file);
+            });
+ 
+            document.getElementById('set-bg-image').addEventListener('change', (e) => {
                 const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(evt) {
-                        config.bgImage = evt.target.result;
-                    };
-                    reader.readAsDataURL(file);
+                if (file) processImageCompression(file, (dataUrl) => { config.bgImage = dataUrl; });
+            });
+            document.getElementById('btn-clear-bg').addEventListener('click', () => {
+                config.bgImage = ''; document.getElementById('set-bg-image').value = '';
+            });
+ 
+            // Raccourcis clavier & Fermeture modal (Échap)
+            document.addEventListener('keydown', (e) => {
+                const modal = document.getElementById('settings-modal');
+                const hModal = document.getElementById('history-modal');
+                
+                if (e.key === 'Escape') {
+                    if (hModal.style.display === 'flex') hModal.style.display = 'none';
+                    else if (modal.style.display === 'flex') closeSettings();
+                } else if ((e.key === ' ' || e.key === 'Enter') && modal.style.display !== 'flex' && hModal.style.display !== 'flex') {
+                    if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.getAttribute('contenteditable') !== 'true') {
+                        e.preventDefault(); spin();
+                    }
+                } else if ((e.key === 'f' || e.key === 'F') && modal.style.display !== 'flex') {
+                    if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.getAttribute('contenteditable') !== 'true') {
+                        document.body.classList.toggle('presentation-mode');
+                    }
                 }
             });
+ 
+            // Clic en dehors des modales
+            document.getElementById('settings-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'settings-modal') closeSettings();
+            });
+            document.getElementById('history-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'history-modal') e.target.style.display = 'none';
+            });
         }
-
+ 
         window.onload = init;
     </script>
 </body>
