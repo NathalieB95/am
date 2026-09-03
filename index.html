@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tirage des binômes de la fabrique pédagogique de l'AM</title>
-    <link rel="icon" type="image/png" href="logofp.png">
+    <title id="page-tab-title">Tirage des binômes de la fabrique pédagogique de l'AM</title>
+    <link id="page-favicon" rel="icon" type="image/png" href="logofp.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -252,6 +252,15 @@
             .main-content { flex-direction: column; gap: 40px; padding-bottom: 100px; }
             .center-controls { order: -1; width: 100%; }
         }
+ 
+        /* --- Gestion du nombre de roues (1 à 4) --- */
+        .main-content { flex-wrap: wrap; }
+        #wheel-container-1 { order: 1; }
+        .center-controls { order: 2; }
+        #wheel-container-2 { order: 3; }
+        #wheel-container-3 { order: 4; }
+        #wheel-container-4 { order: 5; }
+        .wheel-container.wheel-hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -260,9 +269,9 @@
  
     <header>
         <div class="title-container">
-            <img src="logofp.png" alt="Logo FP">
+            <img id="main-logo" src="logofp.png" alt="Logo FP">
             <div>
-                <h1>Tirage des binômes de la fabrique pédagogique de l'AM</h1>
+                <h1 id="main-page-title">Tirage des binômes de la fabrique pédagogique de l'AM</h1>
                 <small id="current-config-badge" style="opacity:0.75; font-size:0.85rem; font-weight:normal; color: #cbd5e1;"></small>
             </div>
         </div>
@@ -274,7 +283,7 @@
     </header>
  
     <div class="main-content">
-        <div class="wheel-container">
+        <div class="wheel-container" id="wheel-container-1">
             <h2 id="title-w1">Pioche 1</h2>
             <div class="pointer" id="pointer1"></div>
             <canvas id="wheel1" class="wheel-canvas"></canvas>
@@ -305,10 +314,22 @@
             </div>
         </div>
  
-        <div class="wheel-container">
+        <div class="wheel-container" id="wheel-container-2">
             <h2 id="title-w2">Pioche 2</h2>
             <div class="pointer" id="pointer2"></div>
             <canvas id="wheel2" class="wheel-canvas"></canvas>
+        </div>
+ 
+        <div class="wheel-container wheel-hidden" id="wheel-container-3">
+            <h2 id="title-w3">Pioche 3</h2>
+            <div class="pointer" id="pointer3"></div>
+            <canvas id="wheel3" class="wheel-canvas"></canvas>
+        </div>
+ 
+        <div class="wheel-container wheel-hidden" id="wheel-container-4">
+            <h2 id="title-w4">Pioche 4</h2>
+            <div class="pointer" id="pointer4"></div>
+            <canvas id="wheel4" class="wheel-canvas"></canvas>
         </div>
     </div>
  
@@ -349,7 +370,51 @@
                 <label>Nom / Version de la configuration</label>
                 <input type="text" id="set-config-name" placeholder="Ex: Promo Web 2026 - Atelier 1">
             </div>
+
+            <div class="flex-row">
+                <div class="form-group">
+                    <label>Titre principal de la page</label>
+                    <input type="text" id="set-main-title" placeholder="Ex: Tirage des binômes de la fabrique...">
+                </div>
+                <div class="form-group">
+                    <label>Nom de l'onglet du navigateur</label>
+                    <input type="text" id="set-tab-title" placeholder="Ex: Tirage des binômes...">
+                </div>
+            </div>
+
+            <div class="flex-row">
+                <div class="form-group">
+                    <label>Logo de l'en-tête</label>
+                    <select id="set-logo-type">
+                        <option value="logofp.png">Logo Fabrique (Défaut)</option>
+                        <option value="logo-assurance-maladie.svg">Logo Assurance Maladie</option>
+                        <option value="none">Aucun logo</option>
+                        <option value="custom">Image personnalisée...</option>
+                    </select>
+                    <input type="file" id="set-logo-file" accept="image/*" style="display:none; margin-top: 5px;">
+                </div>
+                <div class="form-group">
+                    <label>Image du Favicon (Onglet)</label>
+                    <select id="set-favicon-type">
+                        <option value="logofp.png">Logo Fabrique (Défaut)</option>
+                        <option value="logo-assurance-maladie.svg">Logo Assurance Maladie</option>
+                        <option value="none">Aucun</option>
+                        <option value="custom">Image personnalisée...</option>
+                    </select>
+                    <input type="file" id="set-favicon-file" accept="image/*" style="display:none; margin-top: 5px;">
+                </div>
+            </div>
             
+            <div class="form-group">
+                <label>Nombre de roues</label>
+                <select id="set-wheel-count">
+                    <option value="1">1 roue</option>
+                    <option value="2">2 roues</option>
+                    <option value="3">3 roues</option>
+                    <option value="4">4 roues</option>
+                </select>
+            </div>
+ 
             <div class="flex-row">
                 <div class="form-group">
                     <label>Noms Roue 1 (un par ligne)</label>
@@ -358,6 +423,17 @@
                 <div class="form-group">
                     <label>Noms Roue 2 (un par ligne)</label>
                     <textarea id="set-names2" rows="5"></textarea>
+                </div>
+            </div>
+ 
+            <div class="flex-row" id="row-names-3-4">
+                <div class="form-group">
+                    <label>Noms Roue 3 (un par ligne)</label>
+                    <textarea id="set-names3" rows="5"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Noms Roue 4 (un par ligne)</label>
+                    <textarea id="set-names4" rows="5"></textarea>
                 </div>
             </div>
  
@@ -399,6 +475,17 @@
                 <div class="form-group">
                     <label>Titre Résultats</label>
                     <input type="text" id="set-group-title">
+                </div>
+            </div>
+ 
+            <div class="flex-row" id="row-titles-3-4">
+                <div class="form-group">
+                    <label>Nom Roue 3</label>
+                    <input type="text" id="set-title3">
+                </div>
+                <div class="form-group">
+                    <label>Nom Roue 4</label>
+                    <input type="text" id="set-title4">
                 </div>
             </div>
  
@@ -473,31 +560,42 @@
  
         let config = {
             configName: "Configuration Par Défaut",
+            mainTitle: "Tirage des binômes de la fabrique pédagogique de l'AM",
+            tabTitle: "Tirage des binômes de la fabrique pédagogique de l'AM",
+            logoSrc: "logofp.png",
+            faviconSrc: "logofp.png",
+            wheelCount: 2,
             names1: ["Mounaim", "Patricia", "Marine", "Kevin", "Juliette", "Vincent B"],
             names2: ["Priscille", "Clément", "Vincent M", "Domitille", "Lucie", "Murielle"],
+            names3: [], names4: [],
             customPairNames: [], exclusions: [],
             allowTrinomes: true, speechEnabled: false, multiSession: true,
-            title1: "Pioche 1", title2: "Pioche 2", groupTitle: "Binômes formés",
+            title1: "Pioche 1", title2: "Pioche 2", title3: "Pioche 3", title4: "Pioche 4", groupTitle: "Binômes formés",
             speed: 4, paletteKey: 'custom', activeColors: presetPalettes.custom.slice(),
             bgColor: '#111936', bgImage: ''
         };
+
+        let tempLogoData = null;
+        let tempFaviconData = null;
  
-        let activeNames1 = [], activeNames2 = [], pairs = [];
+        let activeNames = { 1: [], 2: [], 3: [], 4: [] };
+        let currentRot = { 1: 0, 2: 0, 3: 0, 4: 0 };
+        let pairs = [];
         let isSpinning = false, isMuted = false;
         let pastSessions = JSON.parse(localStorage.getItem('fp_past_sessions') || '[]');
         
-        // Préchargement du logo pour l'export PNG
-        const logoImg = new Image();
-        logoImg.src = 'logofp.png';
- 
-        // États d'animation
-        let currentRot1 = 0, currentRot2 = 0;
         let animationFrameId;
+ 
+        function getWheelIndexes() {
+            const n = Math.min(4, Math.max(1, config.wheelCount || 2));
+            const arr = [];
+            for (let i = 1; i <= n; i++) arr.push(i);
+            return arr;
+        }
  
         let history = [], historyIndex = -1;
  
         function init() {
-            // Lecture URL Sharing
             const params = new URLSearchParams(window.location.search);
             if (params.has('cfg')) {
                 try {
@@ -511,17 +609,16 @@
             const pendingAutosave = peekSessionAutosave();
  
             saveStateToHistory();
-            initCanvas('wheel1'); initCanvas('wheel2');
+            initCanvas('wheel1'); initCanvas('wheel2'); initCanvas('wheel3'); initCanvas('wheel4');
             resetGame();
             if (pendingAutosave) applySessionAutosave(pendingAutosave);
             setupEventListeners();
         }
  
-        // Init Canvas Retina/4K
         function initCanvas(canvasId) {
             const canvas = document.getElementById(canvasId);
             const dpr = window.devicePixelRatio || 1;
-            const size = 350; // Fixe
+            const size = 350;
             canvas.width = size * dpr;
             canvas.height = size * dpr;
             const ctx = canvas.getContext("2d");
@@ -531,7 +628,7 @@
         function drawWheel(canvasId, names, currentRotation = 0) {
             const canvas = document.getElementById(canvasId);
             const ctx = canvas.getContext("2d");
-            const radius = 175; // 350 / 2
+            const radius = 175;
             const colors = config.activeColors;
             
             ctx.clearRect(0, 0, 350, 350);
@@ -575,11 +672,22 @@
             ctx.restore();
         }
  
+        let sharedAudioCtx = null;
+        function getAudioCtx() {
+            if (!sharedAudioCtx) {
+                sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (sharedAudioCtx.state === 'suspended') {
+                sharedAudioCtx.resume();
+            }
+            return sharedAudioCtx;
+        }
+ 
         function playVictoryChime() {
             if (isMuted) return;
             try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const notes = [523.25, 659.25, 783.99, 1046.5]; // Do-Mi-Sol-Do : petit jingle chaleureux
+                const audioCtx = getAudioCtx();
+                const notes = [523.25, 659.25, 783.99, 1046.5];
                 notes.forEach((freq, i) => {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
@@ -598,7 +706,7 @@
         function playTick() {
             if (isMuted) return;
             try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const audioCtx = getAudioCtx();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.connect(gain); gain.connect(audioCtx.destination);
@@ -613,7 +721,6 @@
             const pair1 = `${n1}-${n2}`.toLowerCase();
             const pair2 = `${n2}-${n1}`.toLowerCase();
             
-            // Exclusions strictes (Paramètres)
             for (let ex of config.exclusions) {
                 const parts = ex.toLowerCase().split('-').map(s=>s.trim());
                 if (parts.length === 2) {
@@ -622,19 +729,13 @@
                     if (pair1 === exStr || pair1 === exStrRev) return true;
                 }
             }
-            // Exclusions douces (Multi-session memory) - évité si possible, mais autorisé si blocage
             if (config.multiSession && pastSessions.includes(pair1)) return "soft";
             
             return false;
         }
  
-        function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
-        // Ralentissement plus marqué en fin de course pour accentuer le suspense
         function easeOutSuspense(x) { return 1 - Math.pow(1 - x, 5); }
  
-        // Calcule l'index du segment actuellement sous le pointeur (en haut du cercle),
-        // en normalisant proprement l'angle par rapport à 0/360°, pour garder l'affichage
-        // (tick sonore, rebond du pointeur) parfaitement synchronisé avec le dessin de la roue.
         function getSegmentUnderPointer(rotationDeg, arcDeg, count) {
             if (!count) return -1;
             const normalizedRot = (360 - (rotationDeg % 360) + 360) % 360;
@@ -644,42 +745,59 @@
         function triggerPointerBounce(pointerId) {
             const ptr = document.getElementById(pointerId);
             ptr.classList.remove('bounce');
-            void ptr.offsetWidth; // trigger reflow
+            void ptr.offsetWidth;
             ptr.classList.add('bounce');
         }
  
+        function findWheelForName(name) {
+            const wheels = getWheelIndexes();
+            for (const w of wheels) {
+                if ((config['names' + w] || []).includes(name)) return w;
+            }
+            return null;
+        }
+ 
         function spin() {
-            if (isSpinning || activeNames1.length === 0 || activeNames2.length === 0) return;
+            const wheels = getWheelIndexes();
+            if (isSpinning || wheels.some(w => activeNames[w].length === 0)) return;
             isSpinning = true;
             document.getElementById('btn-spin').disabled = true;
  
-            // Détermination des gagnants avec système d'anti-collision
-            let rand1, rand2, attempts = 0, bestR1, bestR2;
+            let bestPick = null, softBackup = null, attempts = 0;
             do {
-                rand1 = Math.floor(Math.random() * activeNames1.length);
-                rand2 = Math.floor(Math.random() * activeNames2.length);
-                let status = isPairExcluded(activeNames1[rand1], activeNames2[rand2]);
-                if (status === false) { bestR1 = rand1; bestR2 = rand2; break; }
-                if (status === "soft") { bestR1 = rand1; bestR2 = rand2; } // Garde en backup si pas mieux
+                const pick = {};
+                wheels.forEach(w => { pick[w] = Math.floor(Math.random() * activeNames[w].length); });
+                let status = false;
+                outer:
+                for (let i = 0; i < wheels.length; i++) {
+                    for (let j = i + 1; j < wheels.length; j++) {
+                        const s = isPairExcluded(activeNames[wheels[i]][pick[wheels[i]]], activeNames[wheels[j]][pick[wheels[j]]]);
+                        if (s === true) { status = true; break outer; }
+                        if (s === "soft") status = "soft";
+                    }
+                }
+                if (status === false) { bestPick = pick; break; }
+                if (status === "soft" && !softBackup) softBackup = pick;
                 attempts++;
             } while (attempts < 50);
  
-            if (bestR1 === undefined) { bestR1 = rand1; bestR2 = rand2; } // Forcé si tout est bloqué
-            rand1 = bestR1; rand2 = bestR2;
+            const pick = bestPick || softBackup || (() => {
+                const p = {}; wheels.forEach(w => { p[w] = Math.floor(Math.random() * activeNames[w].length); }); return p;
+            })();
  
             const duration = config.speed * 1000;
-            const startRot1 = currentRot1, startRot2 = currentRot2;
-            
-            const arc1 = 360 / activeNames1.length;
-            const arc2 = 360 / activeNames2.length;
-            
-            // Calcul angle cible (multiples tours + alignement sur le gagnant)
-            // -90 pour compenser le fait que le pointeur est en haut
-            const targetRot1 = startRot1 + (360 * config.speed) + (360 - (rand1 * arc1) - (arc1 / 2) - 90);
-            const targetRot2 = startRot2 + (360 * config.speed) + (360 - (rand2 * arc2) - (arc2 / 2) - 90);
+            const startRot = {}, arc = {}, targetRot = {};
+            wheels.forEach(w => {
+                startRot[w] = currentRot[w];
+                arc[w] = 360 / activeNames[w].length;
+                const desiredVisualAngle = (270 - pick[w] * arc[w] - arc[w] / 2 + 3600) % 360;
+                const currentVisualAngle = ((startRot[w] % 360) + 360) % 360;
+                const extraAngle = (desiredVisualAngle - currentVisualAngle + 360) % 360;
+                targetRot[w] = startRot[w] + extraAngle + 360 * Math.ceil(config.speed);
+            });
  
             let startTime = null;
-            let lastSegment1 = -1, lastSegment2 = -1;
+            const lastSegment = {}; wheels.forEach(w => lastSegment[w] = -1);
  
             function animate(timestamp) {
                 if (!startTime) startTime = timestamp;
@@ -687,24 +805,20 @@
                 let progress = Math.min(elapsed / duration, 1);
                 let ease = easeOutSuspense(progress);
  
-                currentRot1 = startRot1 + (targetRot1 - startRot1) * ease;
-                currentRot2 = startRot2 + (targetRot2 - startRot2) * ease;
+                let segChanged = false;
+                wheels.forEach(w => {
+                    currentRot[w] = startRot[w] + (targetRot[w] - startRot[w]) * ease;
+                    drawWheel('wheel' + w, activeNames[w], currentRot[w]);
  
-                drawWheel('wheel1', activeNames1, currentRot1);
-                drawWheel('wheel2', activeNames2, currentRot2);
+                    const seg = getSegmentUnderPointer(currentRot[w], arc[w], activeNames[w].length);
+                    if (seg !== lastSegment[w]) {
+                        segChanged = true;
+                        triggerPointerBounce('pointer' + w);
+                        lastSegment[w] = seg;
+                    }
+                });
+                if (segChanged) playTick();
  
-                // Détection changement de segment pour tick audio (index normalisé, cf. correction du bug de décalage)
-                let currentSeg1 = getSegmentUnderPointer(currentRot1, arc1, activeNames1.length);
-                let currentSeg2 = getSegmentUnderPointer(currentRot2, arc2, activeNames2.length);
-                
-                if (currentSeg1 !== lastSegment1 || currentSeg2 !== lastSegment2) {
-                    playTick();
-                    if (currentSeg1 !== lastSegment1) triggerPointerBounce('pointer1');
-                    if (currentSeg2 !== lastSegment2) triggerPointerBounce('pointer2');
-                    lastSegment1 = currentSeg1; lastSegment2 = currentSeg2;
-                }
- 
-                // Effet de suspense : ralentissement perçu + halo lumineux dans les 15 derniers %
                 const suspensePhase = progress > 0.85;
                 document.querySelectorAll('.wheel-container').forEach(el => el.classList.toggle('suspense', suspensePhase));
  
@@ -712,62 +826,69 @@
                     animationFrameId = requestAnimationFrame(animate);
                 } else {
                     document.querySelectorAll('.wheel-container').forEach(el => el.classList.remove('suspense'));
-                    finishSpin(rand1, rand2);
+                    finishSpin(pick);
                 }
             }
             animationFrameId = requestAnimationFrame(animate);
         }
  
-        function finishSpin(rand1, rand2) {
-            triggerPointerBounce('pointer1'); triggerPointerBounce('pointer2');
-            
-            const name1 = activeNames1[rand1];
-            const name2 = activeNames2[rand2];
-            
+        function finishSpin(pick) {
+            const wheels = getWheelIndexes();
+            wheels.forEach(w => triggerPointerBounce('pointer' + w));
+ 
+            const chosenNames = {};
+            wheels.forEach(w => { chosenNames[w] = activeNames[w][pick[w]]; });
+ 
             let pairLabel = `Binôme ${pairs.length + 1}`;
             if (config.customPairNames && config.customPairNames[pairs.length]) {
                 pairLabel = config.customPairNames[pairs.length];
             }
  
-            // Trinômes auto
-            let isTrinome = false; let n3 = "";
-            activeNames1.splice(rand1, 1);
-            activeNames2.splice(rand2, 1);
+            wheels.forEach(w => activeNames[w].splice(pick[w], 1));
  
+            let extras = [];
             if (config.allowTrinomes) {
-                if (activeNames1.length === 0 && activeNames2.length === 1) {
-                    n3 = ` & ${activeNames2[0]}`; activeNames2.splice(0, 1); isTrinome = true;
-                } else if (activeNames2.length === 0 && activeNames1.length === 1) {
-                    n3 = ` & ${activeNames1[0]}`; activeNames1.splice(0, 1); isTrinome = true;
-                }
+                wheels.forEach(w => {
+                    if (activeNames[w].length === 1) {
+                        const othersEmpty = wheels.every(w2 => w2 === w || activeNames[w2].length === 0);
+                        if (othersEmpty) {
+                            extras.push(activeNames[w][0]);
+                            activeNames[w].splice(0, 1);
+                        }
+                    }
+                });
             }
  
-            const fullName = `${name1} & ${name2}${n3}`;
- 
-            // Enregistrement Session
+            const allNames = wheels.map(w => chosenNames[w]).concat(extras);
+            const fullName = allNames.join(' & ');
+
             if (config.multiSession) {
-                pastSessions.push(`${name1}-${name2}`.toLowerCase());
-                if(isTrinome) {
-                    pastSessions.push(`${name1}-${n3.replace(' & ','')}`.toLowerCase());
-                    pastSessions.push(`${name2}-${n3.replace(' & ','')}`.toLowerCase());
+                for (let i = 0; i < allNames.length; i++) {
+                    for (let j = i + 1; j < allNames.length; j++) {
+                        pastSessions.push(`${allNames[i]}-${allNames[j]}`.toLowerCase());
+                    }
                 }
                 localStorage.setItem('fp_past_sessions', JSON.stringify(pastSessions));
             }
  
-            // Synthèse Vocale
             if (config.speechEnabled && 'speechSynthesis' in window) {
-                let utterance = new SpeechSynthesisUtterance(`${pairLabel} : ${name1}, ${name2} ${isTrinome ? ', et '+n3.replace(' & ','') : ''}`);
+                let utterance = new SpeechSynthesisUtterance(`${pairLabel} : ${allNames.join(', ')}`);
                 utterance.lang = 'fr-FR';
                 window.speechSynthesis.speak(utterance);
             }
  
             showAnnouncement(pairLabel, fullName, () => {
-                pairs.push({ label: pairLabel, names: fullName, orig: {n1:name1, n2:name2, n3:n3.replace(' & ','')} });
-                
+                const orig = {};
+                wheels.forEach(w => { orig['n' + w] = chosenNames[w]; });
+                orig.extras = extras.map(name => ({ name, wheel: findWheelForName(name) }));
+ 
+                pairs.push({ label: pairLabel, names: fullName, orig });
+ 
                 updateUI();
                 isSpinning = false;
-                
-                if (activeNames1.length === 0 || activeNames2.length === 0) {
+ 
+                const finished = wheels.some(w => activeNames[w].length === 0);
+                if (finished) {
                     document.getElementById('btn-spin').style.display = 'none';
                     document.getElementById('btn-reset').style.display = 'block';
                     document.getElementById('btn-export-table').style.display = 'block';
@@ -787,17 +908,29 @@
         function undoLastDraw() {
             if (pairs.length === 0 || isSpinning) return;
             const last = pairs.pop();
-            
-            // Re-insérer
-            if(last.orig.n1) activeNames1.push(last.orig.n1);
-            if(last.orig.n2) activeNames2.push(last.orig.n2);
-            if(last.orig.n3) {
-                if (config.names1.includes(last.orig.n3)) activeNames1.push(last.orig.n3);
-                else activeNames2.push(last.orig.n3);
+            const wheels = getWheelIndexes();
+ 
+            wheels.forEach(w => {
+                const key = 'n' + w;
+                if (last.orig[key]) activeNames[w].push(last.orig[key]);
+            });
+            (last.orig.extras || []).forEach(e => {
+                if (e.wheel && activeNames[e.wheel]) activeNames[e.wheel].push(e.name);
+            });
+ 
+            if (config.multiSession) {
+                const allNames = wheels.map(w => last.orig['n' + w]).filter(Boolean)
+                    .concat((last.orig.extras || []).map(e => e.name));
+                for (let i = 0; i < allNames.length; i++) {
+                    for (let j = i + 1; j < allNames.length; j++) {
+                        const key = `${allNames[i]}-${allNames[j]}`.toLowerCase();
+                        const idx = pastSessions.lastIndexOf(key);
+                        if (idx !== -1) pastSessions.splice(idx, 1);
+                    }
+                }
+                localStorage.setItem('fp_past_sessions', JSON.stringify(pastSessions));
             }
  
-            if (config.multiSession) pastSessions.pop(); // Enlève le dernier save
-            
             updateUI();
             document.getElementById('btn-spin').style.display = 'block';
             document.getElementById('btn-spin').disabled = false;
@@ -820,10 +953,9 @@
         function resetGame() {
             cancelAnimationFrame(animationFrameId);
             isSpinning = false;
-            activeNames1 = [...config.names1];
-            activeNames2 = [...config.names2];
+            const wheels = getWheelIndexes();
+            [1,2,3,4].forEach(w => { activeNames[w] = wheels.includes(w) ? [...(config['names' + w] || [])] : []; currentRot[w] = 0; });
             pairs = [];
-            currentRot1 = 0; currentRot2 = 0;
  
             document.getElementById('btn-spin').style.display = 'block';
             document.getElementById('btn-spin').disabled = false;
@@ -837,15 +969,14 @@
             updateUI();
         }
  
-        // --- Sauvegarde automatique de la session en cours (sessionStorage) ---
-        // Permet de ne pas perdre un tirage si la page est rechargée par inadvertance.
         const AUTOSAVE_KEY = 'fp_session_autosave';
  
         function saveSessionAutosave() {
             try {
                 sessionStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
-                    activeNames1, activeNames2, pairs,
-                    configName: config.configName
+                    activeNames1: activeNames[1], activeNames2: activeNames[2],
+                    activeNames3: activeNames[3], activeNames4: activeNames[4],
+                    pairs, configName: config.configName
                 }));
             } catch(e) {}
         }
@@ -865,14 +996,17 @@
         }
  
         function applySessionAutosave(saved) {
-            if (saved.configName !== config.configName) return; // Config différente entre-temps, on ignore
+            if (saved.configName !== config.configName) return;
  
             if (confirm("Un tirage en cours a été détecté (page rechargée par inadvertance). Voulez-vous le reprendre là où vous l'aviez laissé ?")) {
-                activeNames1 = saved.activeNames1;
-                activeNames2 = saved.activeNames2;
+                const wheels = getWheelIndexes();
+                activeNames[1] = saved.activeNames1 || [];
+                activeNames[2] = saved.activeNames2 || [];
+                activeNames[3] = saved.activeNames3 || [];
+                activeNames[4] = saved.activeNames4 || [];
                 pairs = saved.pairs;
                 document.getElementById('btn-undo-draw').style.display = pairs.length ? 'block' : 'none';
-                if (activeNames1.length === 0 || activeNames2.length === 0) {
+                if (wheels.some(w => activeNames[w].length === 0)) {
                     document.getElementById('btn-spin').style.display = 'none';
                     document.getElementById('btn-reset').style.display = 'block';
                     document.getElementById('btn-export-table').style.display = 'block';
@@ -944,7 +1078,8 @@
         };
  
         function updateProgressBar() {
-            const totalExpected = pairs.length + Math.max(activeNames1.length, activeNames2.length);
+            const wheels = getWheelIndexes();
+            const totalExpected = pairs.length + Math.max(...wheels.map(w => activeNames[w].length));
             const label = document.getElementById('progress-label');
             const fill = document.getElementById('progress-bar-fill');
             if (!label || !fill) return;
@@ -953,12 +1088,11 @@
         }
  
         function updateUI() {
-            drawWheel('wheel1', activeNames1, currentRot1);
-            drawWheel('wheel2', activeNames2, currentRot2);
+            const wheels = getWheelIndexes();
+            wheels.forEach(w => drawWheel('wheel' + w, activeNames[w], currentRot[w]));
             updateProgressBar();
             
-            // Calcul du nombre de places restantes pour permettre l'édition préventive
-            const remaining = Math.max(activeNames1.length, activeNames2.length);
+            const remaining = Math.max(...wheels.map(w => activeNames[w].length));
  
             let html = pairs.map((p, i) => `
                 <div class="pair-item" style="border-left: 3px solid ${config.activeColors[i % config.activeColors.length]};">
@@ -981,7 +1115,6 @@
             document.getElementById('quick-speed-val').textContent = config.speed + "s";
         }
  
-        // --- GESTION CONFIG ---
         function loadConfig() {
             const saved = localStorage.getItem('binomeConfig');
             if (saved) {
@@ -990,6 +1123,11 @@
                 if (!config.activeColors) config.activeColors = presetPalettes[config.paletteKey || 'custom'].slice();
                 if (!config.exclusions) config.exclusions = [];
             }
+            if (!config.wheelCount) config.wheelCount = 2;
+            if (!config.names3) config.names3 = [];
+            if (!config.names4) config.names4 = [];
+            if (!config.title3) config.title3 = "Pioche 3";
+            if (!config.title4) config.title4 = "Pioche 4";
         }
  
         function saveConfigLocal() {
@@ -999,9 +1137,43 @@
         function applyConfigToApp() {
             const badge = document.getElementById('current-config-badge');
             if (badge) badge.textContent = config.configName ? `📦 ${config.configName}` : '';
+
+            const mainTitleEl = document.getElementById('main-page-title');
+            if (mainTitleEl) mainTitleEl.textContent = config.mainTitle || "Tirage des binômes de la fabrique pédagogique de l'AM";
+            const tabTitleEl = document.getElementById('page-tab-title');
+            if (tabTitleEl) tabTitleEl.textContent = config.tabTitle || "Tirage des binômes de la fabrique pédagogique de l'AM";
+
+            const logoEl = document.getElementById('main-logo');
+            if (logoEl) {
+                if (config.logoSrc === 'none') {
+                    logoEl.style.display = 'none';
+                } else {
+                    logoEl.style.display = 'block';
+                    logoEl.src = config.logoSrc || 'logofp.png';
+                }
+            }
+
+            const favEl = document.getElementById('page-favicon');
+            if (favEl) {
+                if (config.faviconSrc === 'none') {
+                    favEl.href = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+                } else {
+                    favEl.href = config.faviconSrc || 'logofp.png';
+                    if (config.faviconSrc && config.faviconSrc.endsWith('.svg')) {
+                        favEl.type = 'image/svg+xml';
+                    } else {
+                        favEl.type = 'image/png';
+                    }
+                }
+            }
  
-            document.getElementById('title-w1').textContent = config.title1;
-            document.getElementById('title-w2').textContent = config.title2;
+            const wheels = getWheelIndexes();
+            [1,2,3,4].forEach(w => {
+                const titleEl = document.getElementById('title-w' + w);
+                if (titleEl) titleEl.textContent = config['title' + w];
+                const containerEl = document.getElementById('wheel-container-' + w);
+                if (containerEl) containerEl.classList.toggle('wheel-hidden', !wheels.includes(w));
+            });
             document.getElementById('title-group').textContent = config.groupTitle;
             document.documentElement.style.setProperty('--accent', config.activeColors[0] || '#B98E61');
             
@@ -1015,7 +1187,7 @@
  
         function saveStateToHistory() {
             if (historyIndex < history.length - 1) history = history.slice(0, historyIndex + 1);
-            history.push(JSON.parse(JSON.stringify(config))); // Deep clone
+            history.push(JSON.parse(JSON.stringify(config)));
             historyIndex++;
             updateHistoryButtons();
         }
@@ -1055,14 +1227,22 @@
                 saveStateToHistory();
                 config = {
                     configName: "Configuration Par Défaut",
+                    mainTitle: "Tirage des binômes de la fabrique pédagogique de l'AM",
+                    tabTitle: "Tirage des binômes de la fabrique pédagogique de l'AM",
+                    logoSrc: "logofp.png",
+                    faviconSrc: "logofp.png",
+                    wheelCount: 2,
                     names1: ["Mounaim", "Patricia", "Marine", "Kevin", "Juliette", "Vincent B"],
                     names2: ["Priscille", "Clément", "Vincent M", "Domitille", "Lucie", "Murielle"],
+                    names3: [], names4: [],
                     customPairNames: [], exclusions: [],
                     allowTrinomes: true, speechEnabled: false, multiSession: true,
-                    title1: "Pioche 1", title2: "Pioche 2", groupTitle: "Binômes formés",
+                    title1: "Pioche 1", title2: "Pioche 2", title3: "Pioche 3", title4: "Pioche 4", groupTitle: "Binômes formés",
                     speed: 4, paletteKey: 'custom', activeColors: presetPalettes.custom.slice(),
                     bgColor: '#111936', bgImage: ''
                 };
+                tempLogoData = null;
+                tempFaviconData = null;
                 populateSettingsModal();
                 saveSettings();
             }
@@ -1084,19 +1264,44 @@
  
         function populateSettingsModal() {
             document.getElementById('set-config-name').value = config.configName || '';
+            document.getElementById('set-main-title').value = config.mainTitle || '';
+            document.getElementById('set-tab-title').value = config.tabTitle || '';
+
+            const presetLogos = ['logofp.png', 'logo-assurance-maladie.svg', 'none'];
+            const logoVal = presetLogos.includes(config.logoSrc) ? config.logoSrc : 'custom';
+            document.getElementById('set-logo-type').value = logoVal;
+            document.getElementById('set-logo-file').style.display = logoVal === 'custom' ? 'block' : 'none';
+
+            const favVal = presetLogos.includes(config.faviconSrc) ? config.faviconSrc : 'custom';
+            document.getElementById('set-favicon-type').value = favVal;
+            document.getElementById('set-favicon-file').style.display = favVal === 'custom' ? 'block' : 'none';
+
+            document.getElementById('set-wheel-count').value = config.wheelCount || 2;
             document.getElementById('set-names1').value = config.names1.join('\n');
             document.getElementById('set-names2').value = config.names2.join('\n');
+            document.getElementById('set-names3').value = (config.names3 || []).join('\n');
+            document.getElementById('set-names4').value = (config.names4 || []).join('\n');
             document.getElementById('set-custom-pair-names').value = (config.customPairNames || []).join('\n');
             document.getElementById('set-exclusions').value = (config.exclusions || []).join('\n');
             document.getElementById('set-title1').value = config.title1;
             document.getElementById('set-title2').value = config.title2;
+            document.getElementById('set-title3').value = config.title3 || 'Pioche 3';
+            document.getElementById('set-title4').value = config.title4 || 'Pioche 4';
             document.getElementById('set-group-title').value = config.groupTitle;
             document.getElementById('set-palette').value = config.paletteKey || 'custom';
             document.getElementById('set-bg-color').value = config.bgColor;
             document.getElementById('set-allow-trinomes').checked = config.allowTrinomes;
             document.getElementById('set-enable-speech').checked = config.speechEnabled;
             document.getElementById('set-multi-session').checked = config.multiSession;
+            updateWheelCountFieldsVisibility();
             renderColorPickers();
+        }
+ 
+        function updateWheelCountFieldsVisibility() {
+            const count = parseInt(document.getElementById('set-wheel-count').value, 10) || 2;
+            const showExtra = count >= 3;
+            document.getElementById('row-names-3-4').style.display = showExtra ? 'flex' : 'none';
+            document.getElementById('row-titles-3-4').style.display = showExtra ? 'flex' : 'none';
         }
  
         function renderColorPickers() {
@@ -1131,7 +1336,7 @@
                     const cvs = document.createElement('canvas');
                     cvs.width = w; cvs.height = h;
                     cvs.getContext('2d').drawImage(img, 0, 0, w, h);
-                    callback(cvs.toDataURL('image/jpeg', 0.7)); // Compression JPEG 70%
+                    callback(cvs.toDataURL('image/jpeg', 0.7));
                 };
                 img.src = evt.target.result;
             };
@@ -1140,12 +1345,34 @@
  
         function saveSettings() {
             config.configName = document.getElementById('set-config-name').value.trim() || 'Sans titre';
+            config.mainTitle = document.getElementById('set-main-title').value.trim() || "Tirage des binômes de la fabrique pédagogique de l'AM";
+            config.tabTitle = document.getElementById('set-tab-title').value.trim() || "Tirage des binômes de la fabrique pédagogique de l'AM";
+
+            const logoType = document.getElementById('set-logo-type').value;
+            if (logoType === 'custom') {
+                if (tempLogoData) config.logoSrc = tempLogoData;
+            } else {
+                config.logoSrc = logoType;
+            }
+
+            const favType = document.getElementById('set-favicon-type').value;
+            if (favType === 'custom') {
+                if (tempFaviconData) config.faviconSrc = tempFaviconData;
+            } else {
+                config.faviconSrc = favType;
+            }
+
+            config.wheelCount = parseInt(document.getElementById('set-wheel-count').value, 10) || 2;
             config.names1 = document.getElementById('set-names1').value.split('\n').map(s=>s.trim()).filter(s=>s);
             config.names2 = document.getElementById('set-names2').value.split('\n').map(s=>s.trim()).filter(s=>s);
+            config.names3 = document.getElementById('set-names3').value.split('\n').map(s=>s.trim()).filter(s=>s);
+            config.names4 = document.getElementById('set-names4').value.split('\n').map(s=>s.trim()).filter(s=>s);
             config.customPairNames = document.getElementById('set-custom-pair-names').value.split('\n').map(s=>s.trim()).filter(s=>s);
             config.exclusions = document.getElementById('set-exclusions').value.split('\n').map(s=>s.trim()).filter(s=>s);
             config.title1 = document.getElementById('set-title1').value;
             config.title2 = document.getElementById('set-title2').value;
+            config.title3 = document.getElementById('set-title3').value;
+            config.title4 = document.getElementById('set-title4').value;
             config.groupTitle = document.getElementById('set-group-title').value;
             config.paletteKey = document.getElementById('set-palette').value;
             config.bgColor = document.getElementById('set-bg-color').value;
@@ -1196,6 +1423,7 @@
             document.getElementById('btn-settings').addEventListener('click', openSettings);
             document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
             document.getElementById('btn-save-settings').addEventListener('click', saveSettings);
+            document.getElementById('set-wheel-count').addEventListener('change', updateWheelCountFieldsVisibility);
             
             document.getElementById('btn-presentation').addEventListener('click', () => { document.body.classList.toggle('presentation-mode'); });
             document.getElementById('btn-factory-reset').addEventListener('click', factoryReset);
@@ -1205,7 +1433,7 @@
                 if(confirm("Êtes-vous sûr de vouloir effacer l'historique des rencontres ? Toutes les soft-exclusions seront perdues.")) {
                     pastSessions = [];
                     localStorage.removeItem('fp_past_sessions');
-                    openHistoryModal(); // Refresh the list
+                    openHistoryModal();
                 }
             });
  
@@ -1243,6 +1471,22 @@
                 config.paletteKey = 'custom';
                 renderColorPickers();
             });
+
+            document.getElementById('set-logo-type').addEventListener('change', (e) => {
+                document.getElementById('set-logo-file').style.display = e.target.value === 'custom' ? 'block' : 'none';
+            });
+            document.getElementById('set-favicon-type').addEventListener('change', (e) => {
+                document.getElementById('set-favicon-file').style.display = e.target.value === 'custom' ? 'block' : 'none';
+            });
+
+            document.getElementById('set-logo-file').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) processImageCompression(file, (dataUrl) => { tempLogoData = dataUrl; });
+            });
+            document.getElementById('set-favicon-file').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) processImageCompression(file, (dataUrl) => { tempFaviconData = dataUrl; });
+            });
  
             document.getElementById('btn-undo').addEventListener('click', undo);
             document.getElementById('btn-redo').addEventListener('click', redo);
@@ -1273,7 +1517,6 @@
                 config.bgImage = ''; document.getElementById('set-bg-image').value = '';
             });
  
-            // Raccourcis clavier & Fermeture modal (Échap)
             document.addEventListener('keydown', (e) => {
                 const modal = document.getElementById('settings-modal');
                 const hModal = document.getElementById('history-modal');
@@ -1292,7 +1535,6 @@
                 }
             });
  
-            // Clic en dehors des modales
             document.getElementById('settings-modal').addEventListener('click', (e) => {
                 if (e.target.id === 'settings-modal') closeSettings();
             });
